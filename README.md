@@ -1,6 +1,3 @@
-Bạn nói đúng — xin lỗi vì làm bạn rối. Dưới đây là **một khối Markdown HOÀN CHỈNH 1→9** (đã rà soát kỹ, đóng/mở code block đầy đủ).
-👉 Chỉ cần **copy nguyên khối** (kể cả 3 dấu ``` đầu/cuối) dán vào README.md là xong.
-
 ```markdown
 # Web App Truyền thông Đa Kênh — Sprint 0 (Flow Demo)
 
