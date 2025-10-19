@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "Sprint0 Demo API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Schedule",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/schedule",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "schedule"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Demo post\", \"channel\": \"facebook\", \"scheduledAt\": \"2025-01-01T08:00:00Z\"}"
+        }
+      }
+    },
+    {
+      "name": "Webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/messages/webhook",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "messages",
+            "webhook"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"text\": \"Cho h\\u1ecfi gi\\u00e1 bao nhi\\u00eau?\"}"
+        }
+      }
+    },
+    {
+      "name": "KPI",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/kpi?channel=facebook&range=7d",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "kpi"
+          ],
+          "query": [
+            {
+              "key": "channel",
+              "value": "facebook"
+            },
+            {
+              "key": "range",
+              "value": "7d"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
