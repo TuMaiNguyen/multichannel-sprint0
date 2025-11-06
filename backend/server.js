@@ -1,40 +1,52 @@
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
+const express = require('express')
+const cors = require('cors')
+const app = express()
+app.use(cors())
+app.use(express.json())
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
+const db = require('./data.json')
 
-const PORT = process.env.PORT || 3000;
+// Products
+app.get('/products', (req,res)=> res.json(db.products))
 
-app.get('/health', (req,res)=> res.json({ok:true, service:'backend'}));
+// Feedback
+app.get('/feedback', (req,res)=> res.json(db.feedback))
 
-app.post('/schedule', (req,res)=>{
-  const { title='Demo post', channel='facebook', scheduledAt=new Date().toISOString() } = req.body || {};
-  return res.json({ ok:true, id: 'SCH-'+Math.random().toString(36).slice(2,8), title, channel, scheduledAt });
-});
+// Posts
+app.get('/posts', (req,res)=> res.json(db.posts))
+app.post('/posts', (req,res)=>{
+  const post = { id: Date.now(), ...req.body }
+  db.posts.unshift(post)
+  res.json(post)
+})
 
-app.post('/messages/webhook', (req,res)=>{
-  const text = (req.body && req.body.text) ? String(req.body.text) : '';
-  const matched = text.toLowerCase().includes('gia');
-  const reply = matched ? 'Xin chào, giá niêm yết là 399k.' : 'Cảm ơn bạn, nhân viên sẽ phản hồi sớm!';
-  return res.json({ ok:true, matched, reply, stored:true });
-});
+// Messages
+app.get('/messages', (req,res)=> res.json(db.messages))
 
-app.get('/kpi', (req,res)=>{
-  const now = new Date();
-  const days = 7;
-  const data = Array.from({length: days}).map((_,i)=>{
-    const d = new Date(now.getTime() - (days-1-i)*24*3600*1000);
-    const date = d.toISOString().slice(0,10);
-    const reach = 200 + Math.floor(Math.random()*300);
-    const er = +(0.03 + Math.random()*0.04).toFixed(3);
-    const response_time = +(1 + Math.random()*3).toFixed(1);
-    return { date, reach, er, response_time };
-  });
-  res.json({ ok:true, channel: req.query.channel || 'facebook', range: req.query.range || '7d', data });
-});
+// Schedule
+app.get('/schedule', (req,res)=> res.json(db.schedule))
 
-app.listen(PORT, ()=> console.log(`Backend running on :${PORT}`));
+// AI captions (demo)
+app.post('/ai/captions', (req,res)=>{
+  const { product='bánh ngọt', flavor='vanilla', tone='Cute', channel='Facebook', price } = req.body || {}
+  const pick = a => a[Math.floor(Math.random()*a.length)]
+  const CTA = ['Đặt ngay hôm nay nhé!','Ghé tiệm làm ngọt ngày bạn nha!','Inbox để giữ suất tươi mỗi ngày!']
+  const EM = ['🍰','🎂','🫶','✨','🌸']
+  const tag = pick(EM)+pick(EM)
+  const priceStr = price ? ` chỉ từ ${Number(price).toLocaleString()}đ` : ''
+  const base = {
+    Cute: [
+      `${tag} ${product} vị ${flavor} vừa ra lò${priceStr}. ${pick(CTA)}`,
+      `${tag} Một miếng ${product}, một ngày dịu dàng. ${pick(CTA)}`
+    ],
+    Promo: [
+      `${tag} ${product} ${flavor} - mua 2 tặng 1 tuần này${priceStr}.`,
+      `${tag} Ưu đãi nhẹ nhàng: ${product} ${flavor}${priceStr}.`
+    ]
+  }[tone||'Cute']
+  const suffix = { Facebook:'\n#SweetHeaven #Bakery', Zalo:'\nĐặt nhanh trên Zalo nhé!' }[channel] || ''
+  res.json(base.map(c=>c+suffix))
+})
+
+const port = process.env.PORT || 3001
+app.listen(port, ()=> console.log('Mock API on http://localhost:'+port))

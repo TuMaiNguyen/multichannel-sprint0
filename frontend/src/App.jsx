@@ -1,29 +1,29 @@
-import React from 'react'
-import { Link, Routes, Route } from 'react-router-dom'
-import Compose from './pages/Compose.jsx'
-import Calendar from './pages/Calendar.jsx'
-import Inbox from './pages/Inbox.jsx'
-import Dashboard from './pages/Dashboard.jsx'
+import React from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
-const navStyle = { display:'flex', gap:'12px', padding:'12px', borderBottom:'1px solid #eee' }
-const container = { padding:'16px', fontFamily:'Inter, system-ui, Arial' }
+function Home() { return <h2>Trang chủ 🍰</h2>; }
+function Menu() { return <h2>Menu 📋</h2>; }
+function Feedback() { return <h2>Feedback 💬</h2>; }
+function Contact() { return <h2>Liên hệ ☎️</h2>; }
 
-export default function App(){
+export default function App() {
   return (
-    <div style={container}>
-      <nav style={navStyle}>
-        <Link to="/compose">Soạn</Link>
-        <Link to="/calendar">Lịch</Link>
-        <Link to="/inbox">Inbox</Link>
-        <Link to="/dashboard">Dashboard</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Compose/>} />
-        <Route path="/compose" element={<Compose/>} />
-        <Route path="/calendar" element={<Calendar/>} />
-        <Route path="/inbox" element={<Inbox/>} />
-        <Route path="/dashboard" element={<Dashboard/>} />
-      </Routes>
-    </div>
-  )
+    <BrowserRouter>
+      <div style={{ padding: 24 }}>
+        <nav style={{ marginBottom: 12 }}>
+          <Link to="/" style={{ marginRight: 8 }}>Trang chủ</Link>
+          <Link to="/menu" style={{ marginRight: 8 }}>Menu</Link>
+          <Link to="/feedback" style={{ marginRight: 8 }}>Feedback</Link>
+          <Link to="/contact">Liên hệ</Link>
+        </nav>
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
 }
