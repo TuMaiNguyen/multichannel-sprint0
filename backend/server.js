@@ -121,13 +121,11 @@ app.get("/healthz", (_req, res) => res.status(200).send("OK"));
 
 app.get("/products", (_req, res) => res.json(products));
 
-// tiện debug
-app.post("/echo", (req, res) => res.json({ ok: true, data: req.body }));
+// thêm (nếu chưa có):
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
-// ---- Start server (Render yêu cầu bind 0.0.0.0 và dùng PORT env) ----
+// luôn dùng PORT do Render cấp và BIND 0.0.0.0
 const PORT = process.env.PORT || 3001;
-const HOST = "0.0.0.0";
-
-app.listen(PORT, HOST, () => {
-  console.log(`Mock API on http://${HOST}:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Mock API listening on 0.0.0.0:${PORT}`);
 });
