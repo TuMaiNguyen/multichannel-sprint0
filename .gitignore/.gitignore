@@ -16,3 +16,8 @@ pnpm-debug.log*
 # editor
 .vscode/
 .DS_Store
+
+# Ignore Node dependencies and build outputs
+node_modules/
+frontend/node_modules/
+frontend/frontend/
