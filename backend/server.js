@@ -1,52 +1,52 @@
-const express = require('express')
-const cors = require('cors')
-const app = express()
-app.use(cors())
-app.use(express.json())
+// backend/server.js
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
-const db = require('./data.json')
+const app = express();
 
-// Products
-app.get('/products', (req,res)=> res.json(db.products))
+// Cho phép gọi API từ local dev và từ GitHub Pages của bạn
+const ALLOW_ORIGINS = [
+  'http://localhost:5173',
+  'https://tumainguyen.github.io' // Pages domain (repo path không cần)
+];
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // Cho phép origin rỗng khi chạy curl/health check
+      if (!origin) return cb(null, true);
+      if (ALLOW_ORIGINS.some((o) => origin.startsWith(o))) return cb(null, true);
+      return cb(null, false);
+    }
+  })
+);
 
-// Feedback
-app.get('/feedback', (req,res)=> res.json(db.feedback))
+app.use(express.json());
 
-// Posts
-app.get('/posts', (req,res)=> res.json(db.posts))
-app.post('/posts', (req,res)=>{
-  const post = { id: Date.now(), ...req.body }
-  db.posts.unshift(post)
-  res.json(post)
-})
+// Đường dẫn đến data.json
+const DATA_FILE = path.join(__dirname, 'data.json');
 
-// Messages
-app.get('/messages', (req,res)=> res.json(db.messages))
+// Endpoint đơn giản để kiểm tra sống
+app.get('/', (req, res) => {
+  res.json({ ok: true, service: 'Sweet Heaven Bakery API' });
+});
 
-// Schedule
-app.get('/schedule', (req,res)=> res.json(db.schedule))
+// Trả danh sách sản phẩm
+app.get('/products', (req, res) => {
+  try {
+    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    const products = Array.isArray(parsed) ? parsed : parsed.products;
+    res.json(products || []);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Cannot read data.json' });
+  }
+});
 
-// AI captions (demo)
-app.post('/ai/captions', (req,res)=>{
-  const { product='bánh ngọt', flavor='vanilla', tone='Cute', channel='Facebook', price } = req.body || {}
-  const pick = a => a[Math.floor(Math.random()*a.length)]
-  const CTA = ['Đặt ngay hôm nay nhé!','Ghé tiệm làm ngọt ngày bạn nha!','Inbox để giữ suất tươi mỗi ngày!']
-  const EM = ['🍰','🎂','🫶','✨','🌸']
-  const tag = pick(EM)+pick(EM)
-  const priceStr = price ? ` chỉ từ ${Number(price).toLocaleString()}đ` : ''
-  const base = {
-    Cute: [
-      `${tag} ${product} vị ${flavor} vừa ra lò${priceStr}. ${pick(CTA)}`,
-      `${tag} Một miếng ${product}, một ngày dịu dàng. ${pick(CTA)}`
-    ],
-    Promo: [
-      `${tag} ${product} ${flavor} - mua 2 tặng 1 tuần này${priceStr}.`,
-      `${tag} Ưu đãi nhẹ nhàng: ${product} ${flavor}${priceStr}.`
-    ]
-  }[tone||'Cute']
-  const suffix = { Facebook:'\n#SweetHeaven #Bakery', Zalo:'\nĐặt nhanh trên Zalo nhé!' }[channel] || ''
-  res.json(base.map(c=>c+suffix))
-})
-
-const port = process.env.PORT || 3001
-app.listen(port, ()=> console.log('Mock API on http://localhost:'+port))
+// PORT lấy từ Render/Cloud, fallback 3001 khi chạy local
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Mock API on http://localhost:${PORT}`);
+});
