@@ -1,0 +1,18 @@
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color: #5c3a2e;
+  background:
+    radial-gradient(1200px 500px at 20% -10%, #FFE6EE 0%, transparent 60%),
+    radial-gradient(1000px 400px at 80% 0%, #DFF7E6 0%, transparent 65%),
+    radial-gradient(900px 360px at 50% 100%, #FFF6C2 0%, transparent 60%);
+}
+.navbar a { padding:8px 14px; border-radius:999px; text-decoration:none; color:#5c3a2e; background:#ffffffa6; border:1px solid #fff3; margin-right:6px; display:inline-block; }
+.navbar a.active { background:#ffd6e7; font-weight:700; }
+.container { max-width:1100px; margin:0 auto; padding:24px; }
+.card { background:#ffffffc8; backdrop-filter:blur(8px); border:1px solid #fff4; border-radius:16px; padding:18px; box-shadow:0 12px 30px rgba(99,42,63,.08); }
+.logo { width:40px; height:40px; border-radius:999px; background:radial-gradient(circle at 30% 30%, #ffd1dc, #ffecf2); box-shadow:0 8px 20px rgba(99,42,63,.12); display:flex; align-items:center; justify-content:center; font-weight:800; letter-spacing:.5px; color:#632a3f; }
+.title { font-size:22px; font-weight:800; margin:0; }
+.sub { margin:4px 0 0; opacity:.7; }
