@@ -1,26 +1,33 @@
 // frontend/src/pages/public/Home.jsx
 import { useEffect, useState } from 'react';
-import { endpoints, getJSON } from '../../lib/api';
+import { apiGet } from '../../lib/api';
 
 export default function Home() {
-  const [data, setData] = useState(null);
-  const [state, setState] = useState('loading'); // 'loading' | 'ok' | 'error'
+  const [menu, setMenu] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    getJSON(endpoints.products)
-      .then(json => { setData(json); setState('ok'); })
-      .catch(() => setState('error'));
+    apiGet('/menu')
+      .then(setMenu)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (state === 'loading') return <main style={{ padding: 16 }}>Đang tải menu…</main>;
-  if (state === 'error')   return <main style={{ padding: 16, color: 'crimson' }}>Lỗi tải dữ liệu.</main>;
+  if (loading) return <p>Đang tải...</p>;
+  if (error) return <p style={{ color: 'red' }}>Lỗi: {error}</p>;
 
   return (
-    <main style={{ padding: 16 }}>
-      <h1>Sweet Heaven — Menu</h1>
-      <pre style={{ background:'#f6f8fa', padding:12, overflow:'auto' }}>
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </main>
+    <div style={{ padding: 20 }}>
+      <h1>Sweet Heaven Bakery</h1>
+      <h2>Danh sách bánh nổi bật</h2>
+      <ul>
+        {menu.map(item => (
+          <li key={item.id}>
+            <b>{item.name}</b> — {item.price}₫
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

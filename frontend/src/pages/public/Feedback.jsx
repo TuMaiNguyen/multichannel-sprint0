@@ -1,32 +1,58 @@
+// frontend/src/pages/public/Feedback.jsx
 import { useState } from 'react';
-import { API_BASE } from '../../lib/api';
+import { apiGet } from '../../lib/api'; // dùng để test hoặc hiển thị danh sách feedback
+import { apiPost } from '../../lib/api'; // nếu bạn có hàm post trong api.js thì import thêm
 
 export default function Feedback() {
-  const [msg, setMsg] = useState('');
-  const [ok, setOk] = useState(false);
+  const [form, setForm] = useState({ name: '', message: '' });
+  const [status, setStatus] = useState('');
 
-  const submit = async e => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch(`${API_BASE}/feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg }),
-    });
-    setOk(res.ok);
+    setStatus('Đang gửi...');
+    try {
+      await apiPost('/feedback', form);
+      setStatus('✅ Gửi phản hồi thành công!');
+      setForm({ name: '', message: '' });
+    } catch (err) {
+      setStatus('❌ Gửi thất bại, thử lại!');
+      console.error(err);
+    }
   };
 
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Feedback</h1>
-      <form onSubmit={submit}>
-        <input
-          value={msg}
-          onChange={e => setMsg(e.target.value)}
-          placeholder="Ý kiến của bạn"
-        />
-        <button type="submit">Gửi</button>
+    <div style={{ padding: 20 }}>
+      <h1>Góp ý & Phản hồi</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Tên bạn:</label><br />
+          <input
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            style={{ width: '300px', padding: '5px' }}
+          />
+        </div>
+        <div>
+          <label>Nội dung:</label><br />
+          <textarea
+            name="message"
+            value={form.message}
+            onChange={handleChange}
+            required
+            rows={4}
+            style={{ width: '300px', padding: '5px' }}
+          />
+        </div>
+        <button type="submit" style={{ marginTop: 10 }}>Gửi phản hồi</button>
       </form>
-      {ok && <p>Đã gửi — cảm ơn bạn!</p>}
-    </main>
+      {status && <p>{status}</p>}
+    </div>
   );
 }
