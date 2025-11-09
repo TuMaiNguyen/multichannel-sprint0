@@ -1,27 +1,32 @@
-import React, { useEffect, useState } from "react";
-import { API_BASE } from "../../App";
-
+import { useState } from 'react';
+import { API_BASE } from '../../lib/api';
 
 export default function Feedback() {
-  const [data, setData] = useState([]);
+  const [msg, setMsg] = useState('');
+  const [ok, setOk] = useState(false);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/feedback`).then((r) => r.json()).then(setData);
-  }, []);
+  const submit = async e => {
+    e.preventDefault();
+    const res = await fetch(`${API_BASE}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
+    });
+    setOk(res.ok);
+  };
 
   return (
-    <section className="space-y-4">
-      <h3 className="font-display text-xl">Khách nói gì về Sweet Heaven</h3>
-      <div className="grid md:grid-cols-2 gap-4">
-        {data.map((f) => (
-          <blockquote key={f.id} className="card p-4">
-            <p>“{f.text}”</p>
-            <footer className="mt-2 text-sm text-cocoa/70">
-              — {f.author}
-            </footer>
-          </blockquote>
-        ))}
-      </div>
-    </section>
+    <main style={{ padding: 24 }}>
+      <h1>Feedback</h1>
+      <form onSubmit={submit}>
+        <input
+          value={msg}
+          onChange={e => setMsg(e.target.value)}
+          placeholder="Ý kiến của bạn"
+        />
+        <button type="submit">Gửi</button>
+      </form>
+      {ok && <p>Đã gửi — cảm ơn bạn!</p>}
+    </main>
   );
 }
