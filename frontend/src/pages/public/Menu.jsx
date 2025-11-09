@@ -1,32 +1,25 @@
-// frontend/src/pages/public/Menu.jsx
 import { useEffect, useState } from 'react';
 import { apiGet } from '../../lib/api';
 
 export default function Menu() {
-  const [menu, setMenu] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [items, setItems] = useState(null);
+  const [err, setErr] = useState('');
 
   useEffect(() => {
-    apiGet('/menu')
-      .then(setMenu)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+    apiGet('menu').then(setItems).catch(e => setErr(e.message));
   }, []);
 
-  if (loading) return <p>Đang tải menu...</p>;
-  if (error) return <p style={{ color: 'red' }}>Lỗi: {error}</p>;
+  if (err) return <p style={{color:'red'}}>{err}</p>;
+  if (!items) return <p>Đang tải menu…</p>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Menu bánh ngọt</h1>
+    <>
+      <h1>Menu</h1>
       <ul>
-        {menu.map(item => (
-          <li key={item.id}>
-            <b>{item.name}</b> — {item.category} — {item.price}₫
-          </li>
+        {items.map((i) => (
+          <li key={i.id || i.name}>{i.name} – {i.price}</li>
         ))}
       </ul>
-    </div>
+    </>
   );
 }
