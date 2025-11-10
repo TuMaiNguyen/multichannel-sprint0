@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
+import Loader from "../../components/Loader";
+import ErrorBanner from "../../components/ErrorBanner";
+import MenuCard from "../../components/MenuCard";
 
 export default function Menu() {
   const [items, setItems] = useState(null);
@@ -9,17 +12,15 @@ export default function Menu() {
     apiGet("/menu").then(setItems).catch(e => setErr(e.message));
   }, []);
 
-  if (err) return <p className="error">{err}</p>;
-  if (!items) return <p>Đang tải menu…</p>;
+  if (err) return <ErrorBanner error={err} />;
+  if (!items) return <Loader text="Đang tải menu…" />;
 
   return (
     <>
       <h1>Menu</h1>
-      <ol>
-        {items.map(i => (
-          <li key={i.id}>{i.name} — {i.price.toLocaleString("vi-VN")}đ</li>
-        ))}
-      </ol>
+      <div className="grid">
+        {items.map(i => <MenuCard key={i.id} item={i} />)}
+      </div>
     </>
   );
 }
