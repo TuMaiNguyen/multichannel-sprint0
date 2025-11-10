@@ -1,12 +1,15 @@
-// frontent/src/lib/api.js
-const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
+const BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
 
 export async function apiGet(path) {
-  const url = `${API_BASE}${path}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) {
-    // ném lỗi rõ ràng để nhìn thấy status ở UI
-    throw new Error(`GET ${path} failed: ${res.status}`);
+  const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}?t=${Date.now()}`; // phá cache
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  if (!res.ok && res.status !== 304) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`GET ${path} failed: ${res.status} - ${txt}`);
   }
-  return res.json();
+  // 304 vẫn parse được dữ liệu cache
+  try { return await res.json(); } catch { return null; }
 }
