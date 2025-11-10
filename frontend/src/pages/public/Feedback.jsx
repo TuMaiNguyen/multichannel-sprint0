@@ -1,3 +1,3 @@
 export default function Feedback() {
-  return <h2>Feedback — sẽ kết nối API sau</h2>
+  return <p>Trang Feedback: sẽ kết nối API sau.</p>;
 }

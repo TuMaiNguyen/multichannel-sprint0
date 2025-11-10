@@ -1,12 +1,12 @@
 {
   "menu": [
-    { "id": 1, "name": "Bánh Mousse Dâu", "price": 479000, "image": "" },
-    { "id": 2, "name": "Tiramisu", "price": 589000, "image": "" },
-    { "id": 3, "name": "Bông Lan Trứng Muối", "price": 699000, "image": "" }
+    { "id": 1, "name": "Bánh Mousse Dâu", "price": 79000 },
+    { "id": 2, "name": "Tiramisu", "price": 89000 },
+    { "id": 3, "name": "Bông Lan Trứng Muối", "price": 99000 }
   ],
   "contact": {
     "name": "Sweet Heaven Bakery",
-    "address": "159 Đào Duy Anh, Phường Đức Nhuận, TP.HCM",
+    "address": "123 Đường ABC, TP.HCM",
     "phone": "090-123-4567",
     "email": "hello@sweetheaven.vn",
     "openingHours": "08:00–21:00"

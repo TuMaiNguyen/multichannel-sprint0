@@ -2,25 +2,25 @@ import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
 
 export default function Menu() {
-  const [state, setState] = useState({ loading: true, error: null, data: [] });
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
-    apiGet("/menu")
-      .then((data) => setState({ loading: false, error: null, data }))
-      .catch((e) => setState({ loading: false, error: e.message, data: [] }));
+    apiGet("/menu").then(setData).catch((e) => setErr(e.message));
   }, []);
 
-  if (state.loading) return <p>Đang tải menu…</p>;
-  if (state.error) return <p style={{ color: "red" }}>Lỗi: {state.error}</p>;
+  if (err) return <p style={{ color: "red" }}>Lỗi: {err}</p>;
+  if (data === null) return <p>Đang tải menu…</p>;
+  if (data.length === 0) return <p>Chưa có món trong menu.</p>;
 
   return (
     <>
-      <h1>Menu Sweet Heaven</h1>
-      <ul>
-        {state.data.map((i) => (
-          <li key={i.id || i.name}>{i.name} — {i.price}</li>
+      <h1>Menu</h1>
+      <ol>
+        {data.map((x) => (
+          <li key={x.id}>{x.name} — {x.price.toLocaleString("vi-VN")}đ</li>
         ))}
-      </ul>
+      </ol>
     </>
   );
 }

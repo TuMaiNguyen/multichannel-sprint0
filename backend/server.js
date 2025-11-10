@@ -1,26 +1,44 @@
-// backend/server.js
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+
 const app = express();
-
-const PORT = process.env.PORT || 10000;
 app.use(cors());
+app.use(express.json());
 
-// data mẫu – nếu bạn đã có backend/data.json thì giữ nguyên require đường dẫn đó
-const data = require('./data.json'); // { menu: [...], contact: {...} }
+const DB_PATH = path.join(__dirname, "data.json");
+const readDB = () => {
+  try { return JSON.parse(fs.readFileSync(DB_PATH, "utf8")); }
+  catch { return { menu: [], contact: {}, feedback: [] }; }
+};
+const writeDB = (data) =>
+  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), "utf8");
 
-// health
-app.get('/healthz', (req, res) => res.send('OK'));
-app.get('/', (req, res) => res.json({ name: 'Sweet Heaven API', ok: true }));
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
-// routes có /api
-app.get('/api/menu', (req, res) => res.json(data.menu || []));
-app.get('/api/contact', (req, res) => res.json(data.contact || {}));
-
-// routes không /api (để FE cũ cũng chạy được)
-app.get('/menu', (req, res) => res.json(data.menu || []));
-app.get('/contact', (req, res) => res.json(data.contact || {}));
-
-app.listen(PORT, () => {
-  console.log(`Mock API on http://localhost:${PORT}`);
+app.get("/menu", (_req, res) => {
+  const db = readDB();
+  res.json(db.menu || []);
 });
+
+app.get("/contact", (_req, res) => {
+  const db = readDB();
+  res.json(db.contact || {});
+});
+
+app.get("/feedback", (_req, res) => {
+  const db = readDB();
+  res.json(db.feedback || []);
+});
+
+app.post("/feedback", (req, res) => {
+  const db = readDB();
+  db.feedback = db.feedback || [];
+  db.feedback.push({ id: Date.now(), ...req.body });
+  writeDB(db);
+  res.status(201).json({ ok: true });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`API up on ${PORT}`));
