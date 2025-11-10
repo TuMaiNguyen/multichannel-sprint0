@@ -1,17 +1,13 @@
 {
-  "name": "sweet-heaven-backend",
+  "name": "sweet-heaven-api",
   "version": "1.0.0",
-  "description": "Mock API cho Sweet Heaven Bakery — Media Hub",
   "main": "server.js",
-  "type": "commonjs",
+  "license": "MIT",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.2"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "express": "^4.19.2"
+  }
 }
