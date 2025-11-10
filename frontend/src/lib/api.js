@@ -1,15 +1,18 @@
-const BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
+// frontend/src/lib/api.js
+const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
-export async function apiGet(path) {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  const url = `${BASE}${p}?t=${Date.now()}`; // phá cache
-  const res = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+export async function apiGet(path, params = {}) {
+  const url = new URL(API_BASE + path);
+  // phá cache: thêm tham số t
+  url.searchParams.set('t', Date.now());
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
-  // Nếu server trả 304, vẫn dùng cache của trình duyệt (không ném lỗi)
-  if (!res.ok && res.status !== 304) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`GET ${p} failed: ${res.status} - ${txt}`);
+  const res = await fetch(url.toString(), {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`GET ${path} failed: ${res.status} - ${text}`);
   }
-
-  try { return await res.json(); } catch { return null; }
+  return res.json();
 }
