@@ -1,9 +1,9 @@
-// ví dụ Express
 import express from "express";
 import cors from "cors";
 
 const app = express();
 app.use(cors());
+app.use(express.json()); // parse JSON body
 
 let menu = [
   { id: 1, name: "Bánh Mousse Dâu", price: 79000 },
@@ -28,9 +28,23 @@ let contact = {
   openingHours: "08:00–21:00",
 };
 
+const feedbacks = []; // in-memory
+
 app.get("/healthz", (_, res) => res.json({ ok: true }));
 app.get("/menu",    (_, res) => res.json(menu));
 app.get("/contact", (_, res) => res.json(contact));
+
+app.get("/feedback", (req, res) => {
+  const limit = Number(req.query.limit || 50);
+  res.json(feedbacks.slice(-limit).reverse());
+});
+
+app.post("/feedback", (req, res) => {
+  const { name, phone, message } = req.body || {};
+  if (!name || !message) return res.status(400).json({ error: "Thiếu name hoặc message" });
+  feedbacks.push({ id: Date.now(), name, phone: phone || "", message, at: new Date().toISOString() });
+  res.json({ ok: true });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API on :${PORT}`));
