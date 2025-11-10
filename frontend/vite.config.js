@@ -1,11 +1,12 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'node:path';
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-  plugins: [react()],
-  base: '/multichannel-sprint0/',        // để GH Pages không 404 khi refresh
-  build: { outDir: '../docs' },          // build ra ../docs cho GH Pages
-  resolve: { alias: { '@': path.resolve(__dirname, 'src') } }, // alias tiện dùng
-  server: { port: 5173 },
-});
+export default ({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const isProd = mode === 'production'
+  const repoBase = (env.VITE_APP_BASENAME || '').replace(/^\/|\/$/g, '')
+  return defineConfig({
+    plugins: [react()],
+    base: isProd && repoBase ? `/${repoBase}/` : '/', // DEV = '/', PROD = '/multichannel-sprint0/'
+  })
+}
