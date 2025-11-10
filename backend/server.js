@@ -1,26 +1,30 @@
-import express from "express";
-import cors from "cors";
+// backend/server.js
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
-app.use(cors());
-app.use(express.json()); // parse JSON body
+const PORT = process.env.PORT || 10000;
 
-let menu = [
+app.use(cors());
+app.use(express.json());
+
+// --- DATA ---
+const menu = [
   { id: 1, name: "Bánh Mousse Dâu", price: 79000 },
   { id: 2, name: "Tiramisu", price: 89000 },
   { id: 3, name: "Bông Lan Trứng Muối", price: 99000 },
-  { id: 4, name: "Cheesecake Chanh Dây", price: 89000 },
-  { id: 5, name: "Caramel Flan", price: 39000 },
-  { id: 6, name: "Bánh Sừng Bò Bơ", price: 29000 },
-  { id: 7, name: "Bánh Quy Hạnh Nhân", price: 49000 },
-  { id: 8, name: "Mochi Kem Trà Xanh", price: 59000 },
-  { id: 9, name: "Cupcake Socola", price: 45000 },
-  { id:10, name: "Bánh Cuộn Matcha", price: 65000 },
-  { id:11, name: "Tart Trái Cây", price: 85000 },
-  { id:12, name: "Choux Kem Vanilla", price: 35000 },
+  { id: 4, name: "Bánh Su Kem", price: 29000 },
+  { id: 5, name: "Bánh Mì Bơ Tỏi", price: 19000 },
+  { id: 6, name: "Croissant Bơ", price: 35000 },
+  { id: 7, name: "Cheesecake Chanh Dây", price: 89000 },
+  { id: 8, name: "Red Velvet", price: 99000 },
+  { id: 9, name: "Macaron Mix", price: 59000 },
+  { id: 10, name: "Cookie Sô-cô-la", price: 25000 },
+  { id: 11, name: "Bánh Flan Caramel", price: 22000 },
+  { id: 12, name: "Tart Trái Cây", price: 65000 },
 ];
 
-let contact = {
+const contact = {
   name: "Sweet Heaven Bakery",
   address: "159 Đào Duy Anh, phường Đức Nhuận, TP.HCM",
   phone: "090-123-4567",
@@ -30,21 +34,26 @@ let contact = {
 
 const feedbacks = []; // in-memory
 
-app.get("/healthz", (_, res) => res.json({ ok: true }));
-app.get("/menu",    (_, res) => res.json(menu));
-app.get("/contact", (_, res) => res.json(contact));
+// --- ROUTES ---
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
-app.get("/feedback", (req, res) => {
-  const limit = Number(req.query.limit || 50);
-  res.json(feedbacks.slice(-limit).reverse());
-});
+app.get("/menu", (_req, res) => res.json(menu));
+
+app.get("/contact", (_req, res) => res.json(contact));
+
+app.get("/feedback", (_req, res) => res.json(feedbacks));
 
 app.post("/feedback", (req, res) => {
-  const { name, phone, message } = req.body || {};
-  if (!name || !message) return res.status(400).json({ error: "Thiếu name hoặc message" });
-  feedbacks.push({ id: Date.now(), name, phone: phone || "", message, at: new Date().toISOString() });
-  res.json({ ok: true });
+  const { name, message, rating } = req.body || {};
+  const fb = {
+    id: Date.now(),
+    name: name || "Ẩn danh",
+    message: message || "",
+    rating: rating != null ? Number(rating) : null,
+    createdAt: new Date().toISOString(),
+  };
+  feedbacks.push(fb);
+  res.status(201).json({ ok: true, feedback: fb });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API on :${PORT}`));
+app.listen(PORT, () => console.log(`API listening on ${PORT}`));
