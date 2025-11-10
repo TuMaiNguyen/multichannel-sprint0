@@ -1,21 +1,13 @@
-:root { --bg1:#ffe3ec; --bg2:#e9fff1; --text:#2d1b1b; }
-
-*{box-sizing:border-box}
-html,body,#root{height:100%}
-body{
-  margin:0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  color:var(--text);
-  background: radial-gradient(1200px 800px at 10% -10%, var(--bg1) 0%, transparent 50%),
-              radial-gradient(1200px 800px at 110% 10%, var(--bg2) 0%, transparent 50%),
-              #ffffff;
+:root { font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; color: #311; }
+* { box-sizing: border-box; }
+body, #root { min-height: 100vh; margin: 0; }
+body {
+  background: radial-gradient(1200px 600px at 10% 10%, #ffd6e0 0, #fff0 60%),
+              radial-gradient(1200px 600px at 90% 10%, #d8ffe7 0, #fff0 60%),
+              radial-gradient(1200px 600px at 50% 100%, #fff1c2 0, #fff0 60%);
 }
-a{color:#5b22b6; text-decoration:none}
-a:hover{text-decoration:underline}
-.container{max-width:980px; margin:2rem auto; padding:0 1rem}
-h1{font-size:clamp(28px,5vw,56px); margin:1.2rem 0}
-ul,ol{line-height:1.8}
-.badge{display:inline-block; padding:.25rem .5rem; border-radius:.5rem; background:#f5f5f7; font-size:.85rem}
-.nav{display:flex; gap:1.25rem; padding:1rem; font-weight:600}
-.nav a{padding:.35rem .55rem; border-radius:.5rem}
-.nav a.active{background:#efeafd}
+.container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+.nav { display:flex; gap:16px; padding:16px; font-weight:600; }
+.nav a { color:#56206b; text-decoration:none; }
+.nav a.active { text-decoration:underline; }
+.error { color:#c00; font-weight:600; white-space:pre-wrap; }
