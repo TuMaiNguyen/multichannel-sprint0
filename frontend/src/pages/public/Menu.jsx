@@ -1,16 +1,26 @@
-import { useEffect, useState } from 'react'
-import { apiGet } from '../../lib/api'
+import { useEffect, useState } from "react";
+import { apiGet } from "../../lib/api";
 
 export default function Menu() {
-  const [data, setData] = useState(null)
-  const [err, setErr] = useState('')
+  const [state, setState] = useState({ loading: true, error: null, data: [] });
 
   useEffect(() => {
-    apiGet('menu').then(setData).catch(e => setErr(e.message))
-  }, [])
+    apiGet("/menu")
+      .then((data) => setState({ loading: false, error: null, data }))
+      .catch((e) => setState({ loading: false, error: e.message, data: [] }));
+  }, []);
 
-  if (err) return <p style={{color:'red'}}>{err}</p>
-  if (!data) return <p>Đang tải menu…</p>
+  if (state.loading) return <p>Đang tải menu…</p>;
+  if (state.error) return <p style={{ color: "red" }}>Lỗi: {state.error}</p>;
 
-  return <pre>{JSON.stringify(data, null, 2)}</pre>
+  return (
+    <>
+      <h1>Menu Sweet Heaven</h1>
+      <ul>
+        {state.data.map((i) => (
+          <li key={i.id || i.name}>{i.name} — {i.price}</li>
+        ))}
+      </ul>
+    </>
+  );
 }

@@ -1,21 +1,22 @@
-import { useEffect, useState } from 'react'
-import { apiGet } from '../../lib/api'
+import { useEffect, useState } from "react";
+import { apiGet } from "../../lib/api";
 
 export default function Contact() {
-  const [info, setInfo] = useState(null)
-  const [err, setErr] = useState('')
+  const [state, setState] = useState({ loading: true, error: null, data: null });
 
   useEffect(() => {
-    apiGet('contact').then(setInfo).catch(e => setErr(e.message))
-  }, [])
+    apiGet("/contact")
+      .then((data) => setState({ loading: false, error: null, data }))
+      .catch((e) => setState({ loading: false, error: e.message, data: null }));
+  }, []);
 
-  if (err) return <p style={{color:'red'}}>{err}</p>
-  if (!info) return <p>Đang tải thông tin…</p>
+  if (state.loading) return <p>Đang tải thông tin…</p>;
+  if (state.error) return <p style={{ color: "red" }}>Lỗi: {state.error}</p>;
 
   return (
-    <div>
+    <>
       <h1>Liên hệ Sweet Heaven</h1>
-      <pre>{JSON.stringify(info, null, 2)}</pre>
-    </div>
-  )
+      <pre>{JSON.stringify(state.data, null, 2)}</pre>
+    </>
+  );
 }
