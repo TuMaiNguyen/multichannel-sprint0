@@ -1,14 +1,15 @@
-import ReactDOM from "react-dom/client";
-import { HashRouter } from "react-router-dom";
-import App from "./App.jsx";
-import "./index.css";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { HashRouter } from 'react-router-dom'
+import App from './App.jsx'
+import './index.css'
 
-const basename =
-  import.meta.env.VITE_APP_BASENAME ||
-  (import.meta.env.MODE === "development" ? "/" : "/multichannel-sprint0");
+const basename = import.meta.env.VITE_APP_BASENAME || '/'
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <HashRouter basename={basename}>
-    <App />
-  </HashRouter>
-);
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <HashRouter basename={basename}>
+      <App />
+    </HashRouter>
+  </React.StrictMode>
+)

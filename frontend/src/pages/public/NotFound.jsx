@@ -1,8 +1,9 @@
-export default function NotFound(){
+export default function NotFound() {
   return (
-    <>
-      <h1>Trang không tồn tại</h1>
-      <p className="muted">Đường dẫn bạn truy cập không đúng. Vui lòng dùng menu phía trên.</p>
-    </>
-  );
+    <div className="text-center py-20">
+      <div className="text-6xl font-extrabold text-brand-600">404</div>
+      <p className="mt-2 text-slate-600">Trang bạn tìm không tồn tại.</p>
+      <a href="#/" className="btn-primary mt-6 inline-flex">Về trang chủ</a>
+    </div>
+  )
 }

@@ -1,50 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Pastel feel */
 :root {
-  --ink: #2b192d;
-  --brand: #6a2c91;
-  --brand-ink: #4d1f6a;
-  --danger: #c4002b;
-  --muted: #6b6b6b;
-  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial;
-  color: var(--ink);
+  color-scheme: light;
 }
-
-* { box-sizing: border-box; }
-
-html, body, #root { height: 100%; margin: 0; }
 
 body {
-  background:
-    radial-gradient(1200px 600px at 10% 10%, #ffd6e0 0, #fff0 60%),
-    radial-gradient(1200px 600px at 90% 10%, #d8ffe7 0, #fff0 60%),
-    radial-gradient(1200px 600px at 50% 100%, #fff1c2 0, #fff0 60%);
+  @apply bg-gradient-to-b from-mint-50 to-white text-slate-800;
 }
 
-.app { min-height: 100%; }
-
-.nav {
-  display: flex; gap: 20px; padding: 16px 20px; font-weight: 700;
-  position: sticky; top: 0; backdrop-filter: blur(6px);
+.nav-link {
+  @apply px-3 py-2 rounded-xl transition-colors;
 }
-.nav a { color: var(--brand-ink); text-decoration: none; }
-.nav a.active { text-decoration: underline; }
-
-.container { max-width: 980px; margin: 20px auto 60px; padding: 0 20px; }
-h1 { font-size: 44px; margin: 18px 0 12px; }
-h2 { font-size: 24px; margin: 16px 0 12px; }
-p { line-height: 1.6; }
-
-.error { color: var(--danger); font-weight: 700; white-space: pre-wrap; }
-.muted { color: var(--muted); }
-
-/* Grid card cho menu */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+.nav-link[data-active="true"] {
+  @apply bg-brand-100 text-brand-800;
 }
 .card {
-  background: #fff8; border: 1px solid #00000012; border-radius: 14px;
-  padding: 14px; box-shadow: 0 6px 20px #0000000d;
+  @apply rounded-2xl bg-white shadow-soft p-4 flex flex-col;
 }
-.card h3 { font-size: 18px; margin: 0 0 6px; }
-.card .price { font-weight: 700; }
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-white font-medium hover:bg-brand-700 transition disabled:opacity-50;
+}
+.input {
+  @apply w-full rounded-xl border-slate-300 focus:border-brand-400 focus:ring-brand-200;
+}
