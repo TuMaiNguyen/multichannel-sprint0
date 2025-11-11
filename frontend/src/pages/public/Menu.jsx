@@ -1,26 +1,27 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
-import Loader from "../../components/Loader";
-import ErrorBanner from "../../components/ErrorBanner";
-import MenuCard from "../../components/MenuCard";
 
 export default function Menu() {
-  const [items, setItems] = useState(null);
-  const [err, setErr] = useState("");
+  const [menu, setMenu] = useState(null);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
-    apiGet("/menu").then(setItems).catch(e => setErr(e.message));
+    apiGet("/menu").then(setMenu).catch(e => setErr(e.message));
   }, []);
 
-  if (err) return <ErrorBanner error={err} />;
-  if (!items) return <Loader text="Đang tải menu…" />;
+  if (err) return <p style={{ color: "red" }}>Lỗi: {err}</p>;
+  if (!menu) return <p>Đang tải menu...</p>;
 
   return (
-    <>
+    <div>
       <h1>Menu</h1>
-      <div className="grid">
-        {items.map(i => <MenuCard key={i.id} item={i} />)}
-      </div>
-    </>
+      <ol>
+        {menu.map(i => (
+          <li key={i.id}>
+            {i.name} — {i.price.toLocaleString("vi-VN")}đ
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

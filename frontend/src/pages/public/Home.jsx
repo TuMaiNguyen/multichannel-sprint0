@@ -2,24 +2,26 @@ import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
 
 export default function Home() {
-  const [items, setItems] = useState(null);
-  const [err, setErr] = useState("");
+  const [menu, setMenu] = useState(null);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
-    apiGet("/menu").then(setItems).catch(e => setErr(e.message));
+    apiGet("/menu").then(setMenu).catch(e => setErr(e.message));
   }, []);
 
-  if (err) return <p className="error">{err}</p>;
-  if (!items) return <p>Đang tải menu…</p>;
+  if (err) return <p style={{ color: "red" }}>Lỗi: {err}</p>;
+  if (!menu) return <p>Đang tải menu...</p>;
 
   return (
-    <>
+    <div>
       <h1>Sweet Heaven</h1>
       <ul>
-        {items.slice(0,3).map(i => (
-          <li key={i.id}>{i.name} — {i.price.toLocaleString("vi-VN")}đ</li>
+        {menu.slice(0, 3).map(i => (
+          <li key={i.id}>
+            {i.name} — {i.price.toLocaleString("vi-VN")}đ
+          </li>
         ))}
       </ul>
-    </>
+    </div>
   );
 }
