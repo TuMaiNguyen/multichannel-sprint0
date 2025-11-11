@@ -1,27 +1,26 @@
-// backend/server.js
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-
 app.use(cors());
 app.use(express.json());
+
+app.get("/healthz", (req, res) => res.json({ ok: true }));
 
 // --- DATA ---
 const menu = [
   { id: 1, name: "Bánh Mousse Dâu", price: 79000 },
   { id: 2, name: "Tiramisu", price: 89000 },
   { id: 3, name: "Bông Lan Trứng Muối", price: 99000 },
-  { id: 4, name: "Bánh Su Kem", price: 29000 },
-  { id: 5, name: "Bánh Mì Bơ Tỏi", price: 19000 },
-  { id: 6, name: "Croissant Bơ", price: 35000 },
-  { id: 7, name: "Cheesecake Chanh Dây", price: 89000 },
-  { id: 8, name: "Red Velvet", price: 99000 },
-  { id: 9, name: "Macaron Mix", price: 59000 },
-  { id: 10, name: "Cookie Sô-cô-la", price: 25000 },
-  { id: 11, name: "Bánh Flan Caramel", price: 22000 },
-  { id: 12, name: "Tart Trái Cây", price: 65000 },
+  { id: 4, name: "Croissant Bơ", price: 39000 },
+  { id: 5, name: "Macaron Mix Vị", price: 69000 },
+  { id: 6, name: "Cheesecake Chanh Dây", price: 99000 },
+  { id: 7, name: "Red Velvet Cupcake", price: 45000 },
+  { id: 8, name: "Bánh Flan Caramel", price: 29000 },
+  { id: 9, name: "Brownie Socola", price: 49000 },
+  { id:10, name: "Bánh Quy Bơ", price: 25000 },
+  { id:11, name: "Mochi Kem Trà Xanh", price: 55000 },
+  { id:12, name: "Tart Trái Cây", price: 85000 },
 ];
 
 const contact = {
@@ -34,26 +33,17 @@ const contact = {
 
 const feedbacks = []; // in-memory
 
-// --- ROUTES ---
-app.get("/healthz", (_req, res) => res.json({ ok: true }));
-
-app.get("/menu", (_req, res) => res.json(menu));
-
-app.get("/contact", (_req, res) => res.json(contact));
-
-app.get("/feedback", (_req, res) => res.json(feedbacks));
+// --- API ---
+app.get("/menu", (req, res) => res.json(menu));
+app.get("/contact", (req, res) => res.json(contact));
 
 app.post("/feedback", (req, res) => {
-  const { name, message, rating } = req.body || {};
-  const fb = {
-    id: Date.now(),
-    name: name || "Ẩn danh",
-    message: message || "",
-    rating: rating != null ? Number(rating) : null,
-    createdAt: new Date().toISOString(),
-  };
+  const fb = { id: Date.now(), ...req.body };
   feedbacks.push(fb);
-  res.status(201).json({ ok: true, feedback: fb });
+  res.status(201).json({ ok: true, id: fb.id });
 });
+app.get("/feedback", (req, res) => res.json(feedbacks));
 
-app.listen(PORT, () => console.log(`API listening on ${PORT}`));
+// --- START ---
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("API running on", PORT));
