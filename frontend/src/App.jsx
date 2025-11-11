@@ -1,9 +1,17 @@
 import { NavLink, Routes, Route } from 'react-router-dom'
-import Home from './pages/public/Home.jsx'
-import Menu from './pages/public/Menu.jsx'
-import Feedback from './pages/public/Feedback.jsx'
-import Contact from './pages/public/Contact.jsx'
-import NotFound from './pages/public/NotFound.jsx'
+
+function Home() {
+  return (
+    <section className="space-y-4">
+      <h1 className="text-3xl font-extrabold text-slate-900">Sweet Heaven Bakery</h1>
+      <p className="text-slate-600">Bánh tươi mỗi ngày — vị ngọt chuẩn thiên đường.</p>
+      <div className="flex gap-3">
+        <a href="#/menu" className="px-5 py-2.5 rounded-xl bg-brand-600 text-white">Xem Menu</a>
+        <a href="#/feedback" className="px-5 py-2.5 rounded-xl border">Góp ý nhanh</a>
+      </div>
+    </section>
+  )
+}
 
 export default function App() {
   return (
@@ -12,10 +20,23 @@ export default function App() {
         <div className="mx-auto max-w-6xl flex items-center justify-between p-4">
           <div className="text-xl font-bold text-brand-700">Sweet Heaven</div>
           <nav className="flex gap-2">
-            <NavLink to="/" end className="nav-link" data-active={({isActive})=>isActive}>Home</NavLink>
-            <NavLink to="/menu" className="nav-link" data-active={({isActive})=>isActive}>Menu</NavLink>
-            <NavLink to="/feedback" className="nav-link" data-active={({isActive})=>isActive}>Feedback</NavLink>
-            <NavLink to="/contact" className="nav-link" data-active={({isActive})=>isActive}>Contact</NavLink>
+            {[
+              {to:'/', label:'Home', end:true},
+              {to:'/menu', label:'Menu'},
+              {to:'/feedback', label:'Feedback'},
+              {to:'/contact', label:'Contact'},
+            ].map(({to,label,end}) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({isActive}) =>
+                  `nav-link ${isActive ? 'bg-brand-100 text-brand-800' : 'hover:bg-slate-100'}`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
           </nav>
         </div>
       </header>
@@ -23,18 +44,12 @@ export default function App() {
       <main className="mx-auto max-w-6xl p-4">
         <Routes>
           <Route index element={<Home />} />
-          <Route path="menu" element={<Menu />} />
-          <Route path="feedback" element={<Feedback />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="menu" element={<div>Trang Menu</div>} />
+          <Route path="feedback" element={<div>Trang Feedback</div>} />
+          <Route path="contact" element={<div>Trang Contact</div>} />
+          <Route path="*" element={<div className="py-10">404 - Không tìm thấy trang</div>} />
         </Routes>
       </main>
-
-      <footer className="mt-16 border-t">
-        <div className="mx-auto max-w-6xl p-6 text-sm text-slate-500">
-          © {new Date().getFullYear()} Sweet Heaven Bakery. All rights reserved.
-        </div>
-      </footer>
     </div>
   )
 }
