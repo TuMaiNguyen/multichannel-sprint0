@@ -13,6 +13,10 @@ function Home() {
   )
 }
 
+function Page({ title }) {
+  return <div className="py-8 text-lg">{title}</div>
+}
+
 export default function App() {
   return (
     <div className="min-h-screen">
@@ -21,17 +25,17 @@ export default function App() {
           <div className="text-xl font-bold text-brand-700">Sweet Heaven</div>
           <nav className="flex gap-2">
             {[
-              {to:'/', label:'Home', end:true},
+              {to:'/', label:'Home'},
               {to:'/menu', label:'Menu'},
               {to:'/feedback', label:'Feedback'},
               {to:'/contact', label:'Contact'},
-            ].map(({to,label,end}) => (
+            ].map(({to,label}) => (
               <NavLink
                 key={to}
                 to={to}
-                end={end}
+                end
                 className={({isActive}) =>
-                  `nav-link ${isActive ? 'bg-brand-100 text-brand-800' : 'hover:bg-slate-100'}`
+                  `px-3 py-2 rounded-xl ${isActive ? 'bg-brand-100 text-brand-800' : 'hover:bg-slate-100'}`
                 }
               >
                 {label}
@@ -43,13 +47,4 @@ export default function App() {
 
       <main className="mx-auto max-w-6xl p-4">
         <Routes>
-          <Route index element={<Home />} />
-          <Route path="menu" element={<div>Trang Menu</div>} />
-          <Route path="feedback" element={<div>Trang Feedback</div>} />
-          <Route path="contact" element={<div>Trang Contact</div>} />
-          <Route path="*" element={<div className="py-10">404 - Không tìm thấy trang</div>} />
-        </Routes>
-      </main>
-    </div>
-  )
-}
+          {/* DÙNG*
