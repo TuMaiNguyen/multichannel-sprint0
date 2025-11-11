@@ -1,8 +1,9 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+// frontend/vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-// GH Pages under /multichannel-sprint0/
-export default defineConfig({
-  base: "/multichannel-sprint0/",
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-});
+  // Dev chạy "/" cho gọn; build production lên GH Pages dùng base repo
+  base: mode === 'production' ? '/multichannel-sprint0/' : '/',
+}))
