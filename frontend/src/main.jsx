@@ -4,7 +4,6 @@ import { HashRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
-// GH Pages + HashRouter: KHÔNG đặt basename để tránh lệch đường dẫn
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HashRouter>
