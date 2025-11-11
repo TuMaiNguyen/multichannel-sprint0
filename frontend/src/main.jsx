@@ -4,7 +4,8 @@ import { HashRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
-const basename = import.meta.env.VITE_APP_BASENAME || '/'
+// DỨT ĐIỂM: HashRouter KHÔNG cần basename cho GH Pages
+const basename = '/'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
