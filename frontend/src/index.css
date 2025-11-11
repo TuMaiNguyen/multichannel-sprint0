@@ -2,20 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Pastel multi-color background */
+/* Pastel multi-color background (hồng → mint → vàng) */
 :root { color-scheme: light; }
 
 body {
-  background: linear-gradient(
-    135deg,
-    #ffe6ec 0%,
-    #eafbf4 52%,
-    #fff5d9 100%
-  );
+  background: linear-gradient(135deg, #ffe6ec 0%, #eafbf4 52%, #fff5d9 100%);
   color: #0f172a; /* slate-900 */
 }
 
-/* Utility classes for UI */
+/* UI helpers */
 .nav-link { @apply px-3 py-2 rounded-xl transition-colors; }
 .nav-link-active { @apply bg-brand-100 text-brand-800; }
 .card { @apply rounded-2xl bg-white shadow-soft p-4 flex flex-col; }
