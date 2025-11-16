@@ -3,30 +3,14 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// --- middlewares
-app.use(cors({ origin: '*'}));
+app.use(cors());
 app.use(express.json());
-app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store'); // chống cache
-  next();
-});
 
-// --- dữ liệu mock (giữ đơn giản, đủ dùng cho demo)
+// --- demo dữ liệu sẵn có ---
 const menu = [
-  { id: 1, name: 'Croissant Bơ', price: 28000, img: 'https://picsum.photos/seed/croissant/400/280' },
-  { id: 2, name: 'Baguette',     price: 18000, img: 'https://picsum.photos/seed/baguette/400/280' },
-  { id: 3, name: 'Sourdough',    price: 52000, img: 'https://picsum.photos/seed/sourdough/400/280' },
-  { id: 4, name: 'Brownie',      price: 32000, img: 'https://picsum.photos/seed/brownie/400/280' },
-  { id: 5, name: 'Cheesecake',   price: 49000, img: 'https://picsum.photos/seed/cheesecake/400/280' },
-  { id: 6, name: 'Tiramisu',     price: 56000, img: 'https://picsum.photos/seed/tiramisu/400/280' },
-  { id: 7, name: 'Cupcake',      price: 25000, img: 'https://picsum.photos/seed/cupcake/400/280' },
-  { id: 8, name: 'Cookie Choco', price: 15000, img: 'https://picsum.photos/seed/cookie/400/280' },
-  { id: 9, name: 'Mousse Dâu',   price: 45000, img: 'https://picsum.photos/seed/mousse/400/280' },
-  { id: 10, name: 'Bánh Mì Sữa', price: 12000, img: 'https://picsum.photos/seed/milk/400/280' },
-  { id: 11, name: 'Bánh Flan',   price: 17000, img: 'https://picsum.photos/seed/flan/400/280' },
-  { id: 12, name: 'Choux Cream', price: 22000, img: 'https://picsum.photos/seed/choux/400/280' }
+  { id: 1, name: 'Croissant Bơ', price: 25000 },
+  { id: 2, name: 'Baguette', price: 15000 },
+  { id: 3, name: 'Tiramisu Mini', price: 38000 },
 ];
 
 const contact = {
@@ -35,29 +19,33 @@ const contact = {
   open: '08:00–21:00'
 };
 
-const feedback = [
+let feedback = [
   { name: 'Mai', message: 'Croissant ngon quá!', at: new Date().toISOString() }
 ];
 
-// Dữ liệu cho khối Admin
-let postId = 1;
-const posts = [
-  // ví dụ:
-  // { id: 1, channel: 'Facebook', content: 'Soft opening 20% OFF', scheduledAt: '2025-11-20T09:00:00Z', status: 'scheduled' }
+// ---- NEW: dữ liệu phục vụ trang Admin ----
+let posts = [
+  // ví dụ: { id:'p_1731', channel:'facebook', title:'Ra mắt bánh mới', body:'…', at:'2025-11-15T02:00:00Z' }
 ];
 
-let inboxId = 1;
-const inbox = [
-  // { id: 1, from: 'khach@example.com', message: 'Có ship nội thành ko?', at: '2025-11-14T03:21:00Z' }
+let inbox = [
+  // ví dụ: { id:'m_1001', from:'@tiktok', subject:'Comment mới', body:'User X khen bánh', at:'2025-11-15T02:10:00Z' }
 ];
 
-// --- health
-app.get('/healthz', (req, res) => res.json({ ok: true, now: new Date().toISOString() }));
+// KPI tính từ dữ liệu trên (demo)
+const calcKpi = () => ({
+  totalPosts: posts.length,
+  totalMessages: inbox.length,
+  lastPostAt: posts[0]?.at || null,
+  lastMsgAt: inbox[0]?.at || null
+});
 
-// --- public: menu/contact/feedback
+// --------- HEALTH ---------
+app.get('/healthz', (req, res) => res.json({ ok: true }));
+
+// --------- PUBLIC ---------
 app.get('/menu', (req, res) => res.json(menu));
 app.get('/contact', (req, res) => res.json(contact));
-
 app.get('/feedback', (req, res) => res.json(feedback));
 app.post('/feedback', (req, res) => {
   const { name, message } = req.body || {};
@@ -67,53 +55,51 @@ app.post('/feedback', (req, res) => {
   res.status(201).json(item);
 });
 
-// --- admin: posts
+// --------- ADMIN: POSTS ---------
 app.get('/posts', (req, res) => res.json(posts));
 app.post('/posts', (req, res) => {
-  const { channel, content, scheduledAt } = req.body || {};
-  if (!channel || !content) return res.status(400).json({ error: 'channel & content required' });
+  const { title, body, channel } = req.body || {};
+  if (!title) return res.status(400).json({ error: 'title required' });
   const item = {
-    id: postId++,
-    channel,
-    content,
-    scheduledAt: scheduledAt || null,
-    status: scheduledAt ? 'scheduled' : 'draft'
+    id: `p_${Date.now()}`,
+    title,
+    body: body || '',
+    channel: channel || 'facebook',
+    at: new Date().toISOString()
   };
   posts.unshift(item);
   res.status(201).json(item);
 });
+app.delete('/posts/:id', (req, res) => {
+  const { id } = req.params;
+  const before = posts.length;
+  posts = posts.filter(p => p.id !== id);
+  if (posts.length === before) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
+});
 
-// --- admin: inbox
+// --------- ADMIN: INBOX ---------
 app.get('/inbox', (req, res) => res.json(inbox));
 app.post('/inbox', (req, res) => {
-  const { from, message } = req.body || {};
-  if (!from || !message) return res.status(400).json({ error: 'from & message required' });
-  const item = { id: inboxId++, from, message, at: new Date().toISOString() };
+  const { from, subject, body } = req.body || {};
+  if (!from || !subject) return res.status(400).json({ error: 'from & subject required' });
+  const item = { id: `m_${Date.now()}`, from, subject, body: body || '', at: new Date().toISOString() };
   inbox.unshift(item);
   res.status(201).json(item);
 });
-
-// --- admin: kpi (dashboard)
-app.get('/kpi', (req, res) => {
-  const today = new Date().toDateString();
-  const totalPosts = posts.length;
-  const scheduled = posts.filter(p => p.status === 'scheduled').length;
-  const sent = posts.filter(p => p.status === 'sent').length;
-  const inboxToday = inbox.filter(m => new Date(m.at).toDateString() === today).length;
-  const feedbackCount = feedback.length;
-
-  res.json({
-    totalPosts,
-    scheduled,
-    sent,
-    inboxToday,
-    feedbackCount,
-    menuItems: menu.length
-  });
+app.delete('/inbox/:id', (req, res) => {
+  const { id } = req.params;
+  const before = inbox.length;
+  inbox = inbox.filter(m => m.id !== id);
+  if (inbox.length === before) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
 });
 
-// --- root & 404
-app.get('/', (req, res) => res.json({ service: 'Sweet Heaven API', ok: true }));
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+// --------- ADMIN: KPI ---------
+app.get('/kpi', (req, res) => res.json(calcKpi()));
 
-app.listen(PORT, () => console.log(`API listening on :${PORT}`));
+// --------- START ---------
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`API running on :${PORT}`);
+});
