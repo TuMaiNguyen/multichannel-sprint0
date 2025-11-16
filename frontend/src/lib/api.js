@@ -1,34 +1,28 @@
-const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
+// frontend/src/lib/api.js
+const BASE = import.meta.env.VITE_API_BASE; // ví dụ: https://sweet-heaven-api.onrender.com
 
-function join(path) {
-  return `${BASE}${path}`
-}
-function bust(url) {
-  const t = `t=${Date.now()}`
-  return url.includes('?') ? `${url}&${t}` : `${url}?${t}`
+function withBust(url) {
+  return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
 }
 
 export async function apiGet(path) {
-  const res = await fetch(bust(join(path)), {
-    headers: { Accept: 'application/json' }
-  })
-  if (!res.ok) throw new Error(`GET ${path} ${res.status}`)
-  return res.json()
+  const url = withBust(`${BASE}${path}`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`GET ${url} ${res.status}`);
+  return res.json();
 }
 
 export async function apiPost(path, body) {
-  const res = await fetch(join(path), {
+  const url = withBust(`${BASE}${path}`);
+  const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body || {})
-  })
-  if (!res.ok) throw new Error(`POST ${path} ${res.status}`)
-  return res.json()
+  });
+  if (!res.ok) throw new Error(`POST ${url} ${res.status}`);
+  return res.json();
 }
 
-// Cho phép import { api } ... nếu lỡ dùng
-export const api = { get: apiGet, post: apiPost, base: BASE }
-export default api
+// Optional default để import nhầm vẫn chạy
+const api = { get: apiGet, post: apiPost };
+export default api;
