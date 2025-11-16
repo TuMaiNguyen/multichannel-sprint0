@@ -3,95 +3,117 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
+// --- middlewares
+app.use(cors({ origin: '*'}));
 app.use(express.json());
-
-// ---- Health ----
-app.get('/healthz', (_req, res) => res.json({ ok: true }));
-
-// ---- Menu 12 món ----
-const menu = [
-  { id: 1, name: 'Croissant Bơ', price: 25000 },
-  { id: 2, name: 'Pain Au Chocolat', price: 32000 },
-  { id: 3, name: 'Bánh Mì Sourdough', price: 45000 },
-  { id: 4, name: 'Baguette', price: 18000 },
-  { id: 5, name: 'Cheesecake Dâu', price: 55000 },
-  { id: 6, name: 'Tiramisu', price: 52000 },
-  { id: 7, name: 'Mousse Matcha', price: 48000 },
-  { id: 8, name: 'Bánh Su Kem', price: 15000 },
-  { id: 9, name: 'Macaron Mix', price: 60000 },
-  { id:10, name: 'Danish Táo', price: 30000 },
-  { id:11, name: 'Cinnamon Roll', price: 28000 },
-  { id:12, name: 'Choux Vani', price: 14000 },
-];
-app.get('/menu', (_req, res) => res.json(menu));
-
-// ---- Contact ----
-app.get('/contact', (_req, res) => {
-  res.json({
-    address: '159 Đào Duy Anh, Phường 9, Phú Nhuận, TP.HCM',
-    phone: '028-1234-5678',
-    open: '08:00–21:00'
-  });
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store'); // chống cache
+  next();
 });
 
-// ---- Feedback (demo) ----
-const feedback = [{ name: 'Mai', message: 'Croissant ngon quá!', at: new Date().toISOString() }];
-app.get('/feedback', (_req, res) => res.json(feedback));
+// --- dữ liệu mock (giữ đơn giản, đủ dùng cho demo)
+const menu = [
+  { id: 1, name: 'Croissant Bơ', price: 28000, img: 'https://picsum.photos/seed/croissant/400/280' },
+  { id: 2, name: 'Baguette',     price: 18000, img: 'https://picsum.photos/seed/baguette/400/280' },
+  { id: 3, name: 'Sourdough',    price: 52000, img: 'https://picsum.photos/seed/sourdough/400/280' },
+  { id: 4, name: 'Brownie',      price: 32000, img: 'https://picsum.photos/seed/brownie/400/280' },
+  { id: 5, name: 'Cheesecake',   price: 49000, img: 'https://picsum.photos/seed/cheesecake/400/280' },
+  { id: 6, name: 'Tiramisu',     price: 56000, img: 'https://picsum.photos/seed/tiramisu/400/280' },
+  { id: 7, name: 'Cupcake',      price: 25000, img: 'https://picsum.photos/seed/cupcake/400/280' },
+  { id: 8, name: 'Cookie Choco', price: 15000, img: 'https://picsum.photos/seed/cookie/400/280' },
+  { id: 9, name: 'Mousse Dâu',   price: 45000, img: 'https://picsum.photos/seed/mousse/400/280' },
+  { id: 10, name: 'Bánh Mì Sữa', price: 12000, img: 'https://picsum.photos/seed/milk/400/280' },
+  { id: 11, name: 'Bánh Flan',   price: 17000, img: 'https://picsum.photos/seed/flan/400/280' },
+  { id: 12, name: 'Choux Cream', price: 22000, img: 'https://picsum.photos/seed/choux/400/280' }
+];
+
+const contact = {
+  address: '159 Đào Duy Anh, Phường 9, Phú Nhuận, TP.HCM',
+  phone: '028-1234-5678',
+  open: '08:00–21:00'
+};
+
+const feedback = [
+  { name: 'Mai', message: 'Croissant ngon quá!', at: new Date().toISOString() }
+];
+
+// Dữ liệu cho khối Admin
+let postId = 1;
+const posts = [
+  // ví dụ:
+  // { id: 1, channel: 'Facebook', content: 'Soft opening 20% OFF', scheduledAt: '2025-11-20T09:00:00Z', status: 'scheduled' }
+];
+
+let inboxId = 1;
+const inbox = [
+  // { id: 1, from: 'khach@example.com', message: 'Có ship nội thành ko?', at: '2025-11-14T03:21:00Z' }
+];
+
+// --- health
+app.get('/healthz', (req, res) => res.json({ ok: true, now: new Date().toISOString() }));
+
+// --- public: menu/contact/feedback
+app.get('/menu', (req, res) => res.json(menu));
+app.get('/contact', (req, res) => res.json(contact));
+
+app.get('/feedback', (req, res) => res.json(feedback));
 app.post('/feedback', (req, res) => {
-  const { name = 'Ẩn danh', message = '' } = req.body || {};
+  const { name, message } = req.body || {};
+  if (!name || !message) return res.status(400).json({ error: 'name & message required' });
   const item = { name, message, at: new Date().toISOString() };
-  feedback.push(item);
+  feedback.unshift(item);
   res.status(201).json(item);
 });
 
-// =========================
-//      ADMIN ENDPOINTS
-// =========================
-
-// Posts (soạn bài & lên lịch) — in-memory
-const posts = []; // {id,title,channels,content,scheduledAt,status}
-app.get('/posts', (_req, res) => res.json(posts));
+// --- admin: posts
+app.get('/posts', (req, res) => res.json(posts));
 app.post('/posts', (req, res) => {
-  const { title, channels = [], content = '', scheduledAt = '' } = req.body || {};
-  if (!title) return res.status(400).json({ error: 'title is required' });
-  const post = {
-    id: Date.now(),
-    title,
-    channels,
+  const { channel, content, scheduledAt } = req.body || {};
+  if (!channel || !content) return res.status(400).json({ error: 'channel & content required' });
+  const item = {
+    id: postId++,
+    channel,
     content,
-    scheduledAt,
-    status: scheduledAt ? 'Scheduled' : 'Draft'
+    scheduledAt: scheduledAt || null,
+    status: scheduledAt ? 'scheduled' : 'draft'
   };
-  posts.push(post);
-  res.status(201).json(post);
+  posts.unshift(item);
+  res.status(201).json(item);
 });
 
-// Inbox (tin nhắn đa kênh) — mock
-const inbox = [
-  { id: 1, from: 'Facebook | Lan', message: 'Hôm nay có bánh mới không ạ?', ts: new Date().toISOString() },
-  { id: 2, from: 'Zalo | Minh', message: 'Cho em xin menu tiramisu', ts: new Date().toISOString() },
-];
-app.get('/inbox', (_req, res) => res.json(inbox));
-app.post('/inbox/:id/reply', (req, res) => {
-  const { id } = req.params;
-  const { message = '' } = req.body || {};
-  // mock acknowledge
-  res.json({ ok: true, repliedTo: Number(id), message });
+// --- admin: inbox
+app.get('/inbox', (req, res) => res.json(inbox));
+app.post('/inbox', (req, res) => {
+  const { from, message } = req.body || {};
+  if (!from || !message) return res.status(400).json({ error: 'from & message required' });
+  const item = { id: inboxId++, from, message, at: new Date().toISOString() };
+  inbox.unshift(item);
+  res.status(201).json(item);
 });
 
-// KPI dashboard — tính nhanh từ posts/inbox
-app.get('/kpi', (_req, res) => {
-  const scheduled = posts.filter(p => p.status === 'Scheduled').length;
-  const draft = posts.filter(p => p.status === 'Draft').length;
+// --- admin: kpi (dashboard)
+app.get('/kpi', (req, res) => {
+  const today = new Date().toDateString();
+  const totalPosts = posts.length;
+  const scheduled = posts.filter(p => p.status === 'scheduled').length;
+  const sent = posts.filter(p => p.status === 'sent').length;
+  const inboxToday = inbox.filter(m => new Date(m.at).toDateString() === today).length;
+  const feedbackCount = feedback.length;
+
   res.json({
+    totalPosts,
     scheduled,
-    draft,
-    messagesToday: inbox.length,
-    engagementRate: 4.2
+    sent,
+    inboxToday,
+    feedbackCount,
+    menuItems: menu.length
   });
 });
 
-// ---- Start ----
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API listening on ${PORT}`));
+// --- root & 404
+app.get('/', (req, res) => res.json({ service: 'Sweet Heaven API', ok: true }));
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+
+app.listen(PORT, () => console.log(`API listening on :${PORT}`));
