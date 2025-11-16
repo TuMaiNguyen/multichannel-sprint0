@@ -1,83 +1,66 @@
 // frontend/src/pages/admin/Compose.jsx
-import React, { useState } from "react";
-import { api } from "../../lib/api";
+import { useState } from "react";
+import { apiPost } from "../../lib/api";
 
 export default function Compose() {
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    image: "",
-    desc: "",
-    tags: "",
-  });
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-  const [result, setResult] = useState(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [channels, setChannels] = useState(["Facebook"]);
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [ok, setOk] = useState("");
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value }));
-  };
-
-  const submit = async (e) => {
+  async function submit(e) {
     e.preventDefault();
-    setStatus("sending");
-    setError("");
-    setResult(null);
-    try {
-      const payload = {
-        name: form.name.trim(),
-        desc: form.desc.trim(),
-        price: Number(form.price),
-        image: form.image.trim(),
-        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      };
-      const res = await api.composePost(payload); // POST /posts
-      setResult(res);
-      setStatus("ok");
-    } catch (e) {
-      setStatus("error");
-      setError(e.message || "Không đăng được");
-    }
-  };
+    const post = await apiPost("/posts", { title, content, channels, scheduledAt });
+    setOk(`Đã lưu: #${post.id} (${post.status})`);
+    setTitle(""); setContent(""); setChannels(["Facebook"]); setScheduledAt("");
+  }
 
   return (
-    <section>
-      <h2>Đăng bài bánh</h2>
-      {status === "ok" && <div className="alert ok">Đã đăng demo (mock) thành công!</div>}
-      {status === "error" && <div className="alert error">Lỗi: {error}</div>}
-
-      <form onSubmit={submit} className="form" style={{ maxWidth: 560 }}>
-        <label>
-          Tên món
-          <input name="name" value={form.name} onChange={onChange} required />
-        </label>
-        <label>
-          Giá (đ)
-          <input type="number" name="price" value={form.price} onChange={onChange} />
-        </label>
-        <label>
-          Link ảnh
-          <input name="image" value={form.image} onChange={onChange} />
-        </label>
-        <label>
-          Mô tả
-          <textarea name="desc" rows={3} value={form.desc} onChange={onChange} />
-        </label>
-        <label>
-          Tags (cách nhau bằng dấu phẩy)
-          <input name="tags" value={form.tags} onChange={onChange} placeholder="bánh kem, signature" />
-        </label>
-        <button disabled={status === "sending"}>
-          {status === "sending" ? "Đang đăng…" : "Đăng demo"}
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-semibold mb-4">Đăng bài bánh</h1>
+      <form onSubmit={submit} className="space-y-3">
+        <input
+          className="w-full border rounded px-3 py-2"
+          placeholder="Tiêu đề"
+          value={title}
+          onChange={e=>setTitle(e.target.value)}
+          required
+        />
+        <textarea
+          className="w-full border rounded px-3 py-2"
+          rows={6}
+          placeholder="Nội dung"
+          value={content}
+          onChange={e=>setContent(e.target.value)}
+        />
+        <div className="flex gap-3 items-center">
+          <label className="text-sm">Kênh:</label>
+          <select
+            className="border rounded px-2 py-1"
+            value={channels[0]}
+            onChange={e=>setChannels([e.target.value])}
+          >
+            <option>Facebook</option>
+            <option>Instagram</option>
+            <option>Zalo</option>
+            <option>TikTok</option>
+          </select>
+        </div>
+        <div className="flex gap-3 items-center">
+          <label className="text-sm">Lên lịch:</label>
+          <input
+            type="datetime-local"
+            className="border rounded px-2 py-1"
+            value={scheduledAt}
+            onChange={e=>setScheduledAt(e.target.value)}
+          />
+        </div>
+        <button className="px-4 py-2 rounded bg-blue-600 text-white hover:opacity-90">
+          Lưu
         </button>
       </form>
-
-      {result && (
-        <pre style={{ marginTop: 16, background: "#f7f7f7", padding: 12, borderRadius: 8 }}>
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      )}
-    </section>
+      {ok && <p className="mt-3 text-green-700">{ok}</p>}
+    </div>
   );
 }
