@@ -1,105 +1,90 @@
 // backend/server.js
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- demo dữ liệu sẵn có ---
+// ---- mock data (in-memory) ----
 const menu = [
-  { id: 1, name: 'Croissant Bơ', price: 25000 },
-  { id: 2, name: 'Baguette', price: 15000 },
-  { id: 3, name: 'Tiramisu Mini', price: 38000 },
+  { id: 1, name: "Croissant bơ", price: 25000 },
+  { id: 2, name: "Bánh mì sữa", price: 15000 },
+  { id: 3, name: "Tiramisu", price: 42000 },
 ];
-
-const contact = {
-  address: '159 Đào Duy Anh, Phường 9, Phú Nhuận, TP.HCM',
-  phone: '028-1234-5678',
-  open: '08:00–21:00'
-};
 
 let feedback = [
-  { name: 'Mai', message: 'Croissant ngon quá!', at: new Date().toISOString() }
+  { name: "Mai", message: "Croissant ngon quá!", at: "2025-11-11T14:07:47.018Z" }
 ];
 
-// ---- NEW: dữ liệu phục vụ trang Admin ----
-let posts = [
-  // ví dụ: { id:'p_1731', channel:'facebook', title:'Ra mắt bánh mới', body:'…', at:'2025-11-15T02:00:00Z' }
-];
+let posts = []; // bài đăng (admin/Compose)
+let inbox = []; // tin nhắn khách (admin/Inbox)
+let kpi = { posts: 0, messages: 0, lastUpdated: null };
 
-let inbox = [
-  // ví dụ: { id:'m_1001', from:'@tiktok', subject:'Comment mới', body:'User X khen bánh', at:'2025-11-15T02:10:00Z' }
-];
+// ---- helpers ----
+const touchKpi = () => { kpi.lastUpdated = new Date().toISOString(); };
 
-// KPI tính từ dữ liệu trên (demo)
-const calcKpi = () => ({
-  totalPosts: posts.length,
-  totalMessages: inbox.length,
-  lastPostAt: posts[0]?.at || null,
-  lastMsgAt: inbox[0]?.at || null
+// ---- public endpoints (đang dùng) ----
+app.get("/healthz", (req, res) => res.json({ ok: true }));
+
+app.get("/menu", (req, res) => res.json(menu));
+
+app.get("/contact", (req, res) => {
+  res.json({
+    address: "159 Đào Duy Anh, Phường 9, Phú Nhuận, TP.HCM",
+    phone: "028-1234-5678",
+    open: "08:00–21:00",
+  });
 });
 
-// --------- HEALTH ---------
-app.get('/healthz', (req, res) => res.json({ ok: true }));
-
-// --------- PUBLIC ---------
-app.get('/menu', (req, res) => res.json(menu));
-app.get('/contact', (req, res) => res.json(contact));
-app.get('/feedback', (req, res) => res.json(feedback));
-app.post('/feedback', (req, res) => {
+app.get("/feedback", (req, res) => res.json(feedback));
+app.post("/feedback", (req, res) => {
   const { name, message } = req.body || {};
-  if (!name || !message) return res.status(400).json({ error: 'name & message required' });
+  if (!name || !message) return res.status(400).json({ error: "name & message required" });
   const item = { name, message, at: new Date().toISOString() };
   feedback.unshift(item);
+  touchKpi();
   res.status(201).json(item);
 });
 
-// --------- ADMIN: POSTS ---------
-app.get('/posts', (req, res) => res.json(posts));
-app.post('/posts', (req, res) => {
-  const { title, body, channel } = req.body || {};
-  if (!title) return res.status(400).json({ error: 'title required' });
-  const item = {
-    id: `p_${Date.now()}`,
-    title,
-    body: body || '',
-    channel: channel || 'facebook',
-    at: new Date().toISOString()
-  };
+// ---- NEW: admin endpoints ----
+// 1) Bài đăng
+app.get("/posts", (req, res) => res.json(posts));
+app.post("/posts", (req, res) => {
+  const { title, body, channel = "Facebook" } = req.body || {};
+  if (!title || !body) return res.status(400).json({ error: "title & body required" });
+  const item = { id: Date.now(), title, body, channel, at: new Date().toISOString() };
   posts.unshift(item);
+  kpi.posts = posts.length;
+  touchKpi();
   res.status(201).json(item);
 });
-app.delete('/posts/:id', (req, res) => {
-  const { id } = req.params;
-  const before = posts.length;
-  posts = posts.filter(p => p.id !== id);
-  if (posts.length === before) return res.status(404).json({ error: 'not found' });
-  res.json({ ok: true });
-});
 
-// --------- ADMIN: INBOX ---------
-app.get('/inbox', (req, res) => res.json(inbox));
-app.post('/inbox', (req, res) => {
-  const { from, subject, body } = req.body || {};
-  if (!from || !subject) return res.status(400).json({ error: 'from & subject required' });
-  const item = { id: `m_${Date.now()}`, from, subject, body: body || '', at: new Date().toISOString() };
+// 2) Hộp thư khách hàng
+app.get("/inbox", (req, res) => res.json(inbox));
+app.post("/inbox", (req, res) => {
+  const { from, message } = req.body || {};
+  if (!from || !message) return res.status(400).json({ error: "from & message required" });
+  const item = { id: Date.now(), from, message, at: new Date().toISOString() };
   inbox.unshift(item);
+  kpi.messages = inbox.length;
+  touchKpi();
   res.status(201).json(item);
 });
-app.delete('/inbox/:id', (req, res) => {
-  const { id } = req.params;
-  const before = inbox.length;
-  inbox = inbox.filter(m => m.id !== id);
-  if (inbox.length === before) return res.status(404).json({ error: 'not found' });
-  res.json({ ok: true });
+
+// 3) KPI dashboard
+app.get("/kpi", (req, res) => res.json(kpi));
+
+// Trang gốc: liệt kê endpoint cho dễ test
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    endpoints: ["/healthz", "/menu", "/contact", "/feedback (GET|POST)", "/posts (GET|POST)", "/inbox (GET|POST)", "/kpi"]
+  });
 });
 
-// --------- ADMIN: KPI ---------
-app.get('/kpi', (req, res) => res.json(calcKpi()));
-
-// --------- START ---------
-const PORT = process.env.PORT || 10000;
+// ---- start ----
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`API running on :${PORT}`);
 });
