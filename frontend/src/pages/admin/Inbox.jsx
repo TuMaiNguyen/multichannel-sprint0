@@ -1,63 +1,31 @@
-// frontend/src/pages/admin/Inbox.jsx
-import React, { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { useEffect, useState } from 'react'
+import { apiGet } from '../../lib/api'
+import Loader from '../../components/Loader'
+import ErrorBanner from '../../components/ErrorBanner'
 
 export default function Inbox() {
-  const [rows, setRows] = useState([]);
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
+  const [st, setSt] = useState({ loading: true, error: '', data: [] })
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setStatus("loading");
-        const data = await api.feedbackList(); // GET /feedback
-        if (!cancelled) {
-          setRows(Array.isArray(data) ? data : data?.items || []);
-          setStatus("ok");
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e.message || "Không tải được danh sách góp ý");
-          setStatus("error");
-        }
-      }
-    })();
-    return () => (cancelled = true);
-  }, []);
+    apiGet('/feedback')
+      .then(d => setSt({ loading: false, error: '', data: d }))
+      .catch(e => setSt({ loading: false, error: e.message, data: [] }))
+  }, [])
+
+  if (st.loading) return <Loader />
+  if (st.error) return <ErrorBanner message={st.error} />
 
   return (
-    <section>
-      <h2>Hộp thư góp ý</h2>
-      {status === "loading" && <p>Đang tải…</p>}
-      {status === "error" && <p>Lỗi: {error}</p>}
-
-      {status === "ok" && rows.length === 0 && <p>Chưa có góp ý nào.</p>}
-      {status === "ok" && rows.length > 0 && (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Thời gian</th>
-              <th>Tên</th>
-              <th>Email</th>
-              <th>Rating</th>
-              <th>Nội dung</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td>{r.createdAt ? new Date(r.createdAt).toLocaleString("vi-VN") : "-"}</td>
-                <td>{r.name}</td>
-                <td>{r.email}</td>
-                <td>{r.rating}</td>
-                <td style={{ maxWidth: 420 }}>{r.message}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
-  );
+    <div className="space-y-3">
+      {st.data.map((fb, i) => (
+        <div key={i} className="rounded-2xl bg-white p-4 shadow-soft">
+          <div className="font-semibold">{fb.name}</div>
+          <div className="text-sm text-slate-600">
+            {new Date(fb.at).toLocaleString('vi-VN')}
+          </div>
+          <div className="mt-1">{fb.message}</div>
+        </div>
+      ))}
+    </div>
+  )
 }

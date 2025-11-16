@@ -5,6 +5,13 @@ import Feedback from './pages/public/Feedback.jsx'
 import Contact from './pages/public/Contact.jsx'
 import NotFound from './pages/public/NotFound.jsx'
 
+// Admin pages
+import AdminLayout from './pages/admin/AdminLayout.jsx'
+import AdminDashboard from './pages/admin/Dashboard.jsx'
+import AdminCompose from './pages/admin/Compose.jsx'
+import AdminCalendar from './pages/admin/Calendar.jsx'
+import AdminInbox from './pages/admin/Inbox.jsx'
+
 const LinkItem = ({ to, label }) => (
   <NavLink
     to={to}
@@ -28,16 +35,27 @@ export default function App() {
             <LinkItem to="/menu" label="Menu" />
             <LinkItem to="/feedback" label="Feedback" />
             <LinkItem to="/contact" label="Contact" />
+            <LinkItem to="/admin" label="Admin" />
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl p-4">
         <Routes>
+          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/contact" element={<Contact />} />
+
+          {/* Admin (nested) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="compose" element={<AdminCompose />} />
+            <Route path="calendar" element={<AdminCalendar />} />
+            <Route path="inbox" element={<AdminInbox />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -1,83 +1,57 @@
-// frontend/src/pages/admin/Compose.jsx
-import React, { useState } from "react";
-import { api } from "../../lib/api";
+import { useState } from 'react'
+
+function loadPosts(){ try{ return JSON.parse(localStorage.getItem('sh_posts')||'[]') }catch{ return [] } }
+function savePosts(arr){ localStorage.setItem('sh_posts', JSON.stringify(arr)) }
 
 export default function Compose() {
   const [form, setForm] = useState({
-    name: "",
-    price: "",
-    image: "",
-    desc: "",
-    tags: "",
-  });
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-  const [result, setResult] = useState(null);
+    title:'', channel:'Facebook', time:'', content:''
+  })
+  const [posts, setPosts] = useState(loadPosts())
+  const [submitting, setSubmitting] = useState(false)
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value }));
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setStatus("sending");
-    setError("");
-    setResult(null);
-    try {
-      const payload = {
-        name: form.name.trim(),
-        desc: form.desc.trim(),
-        price: Number(form.price),
-        image: form.image.trim(),
-        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      };
-      const res = await api.composePost(payload); // POST /posts
-      setResult(res);
-      setStatus("ok");
-    } catch (e) {
-      setStatus("error");
-      setError(e.message || "Không đăng được");
-    }
-  };
+  function submit(e){
+    e.preventDefault()
+    setSubmitting(true)
+    const next = [{ id: Date.now(), status:'scheduled', ...form }, ...posts]
+    savePosts(next)
+    setPosts(next)
+    setForm({ title:'', channel:'Facebook', time:'', content:'' })
+    setSubmitting(false)
+  }
 
   return (
-    <section>
-      <h2>Đăng bài bánh</h2>
-      {status === "ok" && <div className="alert ok">Đã đăng demo (mock) thành công!</div>}
-      {status === "error" && <div className="alert error">Lỗi: {error}</div>}
-
-      <form onSubmit={submit} className="form" style={{ maxWidth: 560 }}>
-        <label>
-          Tên món
-          <input name="name" value={form.name} onChange={onChange} required />
-        </label>
-        <label>
-          Giá (đ)
-          <input type="number" name="price" value={form.price} onChange={onChange} />
-        </label>
-        <label>
-          Link ảnh
-          <input name="image" value={form.image} onChange={onChange} />
-        </label>
-        <label>
-          Mô tả
-          <textarea name="desc" rows={3} value={form.desc} onChange={onChange} />
-        </label>
-        <label>
-          Tags (cách nhau bằng dấu phẩy)
-          <input name="tags" value={form.tags} onChange={onChange} placeholder="bánh kem, signature" />
-        </label>
-        <button disabled={status === "sending"}>
-          {status === "sending" ? "Đang đăng…" : "Đăng demo"}
+    <div className="grid md:grid-cols-3 gap-6">
+      <form onSubmit={submit} className="md:col-span-1 space-y-3 bg-white p-4 rounded-2xl shadow-soft">
+        <div className="text-lg font-semibold">Đăng bài bánh</div>
+        <input className="input" placeholder="Tiêu đề" required
+          value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/>
+        <select className="input" value={form.channel} onChange={e=>setForm({...form,channel:e.target.value})}>
+          <option>Facebook</option><option>Instagram</option><option>Zalo OA</option>
+        </select>
+        <input type="datetime-local" className="input" value={form.time}
+          onChange={e=>setForm({...form,time:e.target.value})}/>
+        <textarea className="input" rows="5" placeholder="Nội dung bài" required
+          value={form.content} onChange={e=>setForm({...form,content:e.target.value})}/>
+        <button className="btn-primary" disabled={submitting}>
+          {submitting ? 'Đang lưu…' : 'Lưu & lên lịch'}
         </button>
       </form>
 
-      {result && (
-        <pre style={{ marginTop: 16, background: "#f7f7f7", padding: 12, borderRadius: 8 }}>
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      )}
-    </section>
-  );
+      <div className="md:col-span-2 space-y-3">
+        <div className="text-lg font-semibold">Bài đã soạn</div>
+        {posts.length === 0 && <div className="rounded-2xl bg-white p-4 shadow-soft text-slate-500">Chưa có bài nào.</div>}
+        {posts.map(p=>(
+          <div key={p.id} className="rounded-2xl bg-white p-4 shadow-soft">
+            <div className="flex items-center justify-between">
+              <div className="font-semibold">{p.title}</div>
+              <div className="text-xs px-2 py-1 rounded bg-brand-100 text-brand-800">{p.status}</div>
+            </div>
+            <div className="text-slate-600 text-sm">{p.channel} • {p.time || 'Không hẹn giờ'}</div>
+            <div className="mt-2">{p.content}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }

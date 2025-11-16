@@ -1,35 +1,34 @@
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
 
-function normalizePath(path) {
-  return path.startsWith('/') ? path : `/${path}`
+function join(path) {
+  return `${BASE}${path}`
 }
-function cacheBust(url) {
-  const sep = url.includes('?') ? '&' : '?'
-  return `${url}${sep}_=${Date.now()}`
+function bust(url) {
+  const t = `t=${Date.now()}`
+  return url.includes('?') ? `${url}&${t}` : `${url}?${t}`
 }
 
 export async function apiGet(path) {
-  const url = cacheBust(`${BASE}${normalizePath(path)}`)
-  const res = await fetch(url, {
-    mode: 'cors',
-    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+  const res = await fetch(bust(join(path)), {
+    headers: { Accept: 'application/json' }
   })
-  if (!res.ok) throw new Error(`GET ${path} → ${res.status}`)
+  if (!res.ok) throw new Error(`GET ${path} ${res.status}`)
   return res.json()
 }
 
 export async function apiPost(path, body) {
-  const url = `${BASE}${normalizePath(path)}`
-  const res = await fetch(url, {
+  const res = await fetch(join(path), {
     method: 'POST',
-    mode: 'cors',
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
+      Accept: 'application/json'
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body || {})
   })
-  if (!res.ok) throw new Error(`POST ${path} → ${res.status}`)
+  if (!res.ok) throw new Error(`POST ${path} ${res.status}`)
   return res.json()
 }
+
+// Cho phép import { api } ... nếu lỡ dùng
+export const api = { get: apiGet, post: apiPost, base: BASE }
+export default api
