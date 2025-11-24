@@ -1,28 +1,29 @@
 // frontend/src/lib/api.js
-const BASE = import.meta.env.VITE_API_BASE; // ví dụ: https://sweet-heaven-api.onrender.com
+const API_BASE =
+  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE) ||
+  "https://sweet-heaven-api.onrender.com";
 
-function withBust(url) {
-  return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+async function handle(res) {
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`[${res.status}] ${t || res.statusText}`);
+  }
+  return res.json();
 }
 
 export async function apiGet(path) {
-  const url = withBust(`${BASE}${path}`);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`GET ${url} ${res.status}`);
-  return res.json();
+  const res = await fetch(`${API_BASE}${path}`, { credentials: "omit" });
+  return handle(res);
 }
 
 export async function apiPost(path, body) {
-  const url = withBust(`${BASE}${path}`);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body || {})
   });
-  if (!res.ok) throw new Error(`POST ${url} ${res.status}`);
-  return res.json();
+  return handle(res);
 }
 
-// Optional default để import nhầm vẫn chạy
-const api = { get: apiGet, post: apiPost };
-export default api;
+// Optional grouped export
+export const api = { get: apiGet, post: apiPost };
