@@ -1,90 +1,106 @@
-// backend/server.js
-const express = require("express");
-const cors = require("cors");
+// backend/server.js  (CommonJS)
+
+const express = require('express');
+const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
+const PORT = process.env.PORT || 10000;
+
+// ----- Middlewares
 app.use(cors());
 app.use(express.json());
 
-// ---- mock data (in-memory) ----
+// ----- In-memory stores (demo)
 const menu = [
-  { id: 1, name: "Croissant bơ", price: 25000 },
-  { id: 2, name: "Bánh mì sữa", price: 15000 },
-  { id: 3, name: "Tiramisu", price: 42000 },
+  { id: 'm1', name: 'Croissant Bơ', price: 25000, desc: 'Bơ thơm, lớp vỏ giòn.' },
+  { id: 'm2', name: 'Bánh Mì Sourdough', price: 45000, desc: 'Men tự nhiên, tốt cho tiêu hoá.' },
+  { id: 'm3', name: 'Brioche Trứng', price: 38000, desc: 'Mềm ẩm, thơm sữa.' },
 ];
 
-let feedback = [
-  { name: "Mai", message: "Croissant ngon quá!", at: "2025-11-11T14:07:47.018Z" }
+const feedback = [
+  { id: 'fb1', name: 'Mai', message: 'Croissant ngon quá!', createdAt: new Date().toISOString() },
 ];
 
-let posts = []; // bài đăng (admin/Compose)
-let inbox = []; // tin nhắn khách (admin/Inbox)
-let kpi = { posts: 0, messages: 0, lastUpdated: null };
+const posts = [];        // { id, title, content, channel, status, createdAt }
+const inbox = [];        // { id, sender, message, createdAt }
+const kpi = [];          // { id, metric, value, capturedAt }
 
-// ---- helpers ----
-const touchKpi = () => { kpi.lastUpdated = new Date().toISOString(); };
+// ----- Public endpoints (đã dùng ở FE)
+app.get('/healthz', (req, res) => res.json({ ok: true }));
+app.get('/menu',    (req, res) => res.json(menu));
+app.get('/contact', (req, res) => res.json({
+  address: '159 Đào Duy Anh, P.9, Phú Nhuận, TP.HCM',
+  phone: '028-1234-5678',
+  hours: '08:00–21:00',
+}));
 
-// ---- public endpoints (đang dùng) ----
-app.get("/healthz", (req, res) => res.json({ ok: true }));
-
-app.get("/menu", (req, res) => res.json(menu));
-
-app.get("/contact", (req, res) => {
-  res.json({
-    address: "159 Đào Duy Anh, Phường 9, Phú Nhuận, TP.HCM",
-    phone: "028-1234-5678",
-    open: "08:00–21:00",
-  });
-});
-
-app.get("/feedback", (req, res) => res.json(feedback));
-app.post("/feedback", (req, res) => {
+app.get('/feedback', (req, res) => res.json(feedback));
+app.post('/feedback', (req, res) => {
   const { name, message } = req.body || {};
-  if (!name || !message) return res.status(400).json({ error: "name & message required" });
-  const item = { name, message, at: new Date().toISOString() };
+  const item = { id: `fb_${Date.now()}`, name, message, createdAt: new Date().toISOString() };
   feedback.unshift(item);
-  touchKpi();
-  res.status(201).json(item);
+  res.status(201).json({ ok: true, item });
 });
 
-// ---- NEW: admin endpoints ----
-// 1) Bài đăng
-app.get("/posts", (req, res) => res.json(posts));
-app.post("/posts", (req, res) => {
-  const { title, body, channel = "Facebook" } = req.body || {};
-  if (!title || !body) return res.status(400).json({ error: "title & body required" });
-  const item = { id: Date.now(), title, body, channel, at: new Date().toISOString() };
+// ----- Admin demo endpoints
+app.get('/posts', (req, res) => res.json(posts));
+app.post('/posts', (req, res) => {
+  const { title, content, channel } = req.body || {};
+  const item = {
+    id: `post_${Date.now()}`,
+    title, content, channel,
+    status: 'draft',
+    createdAt: new Date().toISOString(),
+  };
   posts.unshift(item);
-  kpi.posts = posts.length;
-  touchKpi();
-  res.status(201).json(item);
+  res.status(201).json({ ok: true, item });
 });
 
-// 2) Hộp thư khách hàng
-app.get("/inbox", (req, res) => res.json(inbox));
-app.post("/inbox", (req, res) => {
-  const { from, message } = req.body || {};
-  if (!from || !message) return res.status(400).json({ error: "from & message required" });
-  const item = { id: Date.now(), from, message, at: new Date().toISOString() };
+app.get('/inbox', (req, res) => res.json(inbox));
+app.post('/inbox', (req, res) => {
+  const { sender, message } = req.body || {};
+  const item = { id: `in_${Date.now()}`, sender, message, createdAt: new Date().toISOString() };
   inbox.unshift(item);
-  kpi.messages = inbox.length;
-  touchKpi();
-  res.status(201).json(item);
+  res.status(201).json({ ok: true, item });
 });
 
-// 3) KPI dashboard
-app.get("/kpi", (req, res) => res.json(kpi));
-
-// Trang gốc: liệt kê endpoint cho dễ test
-app.get("/", (req, res) => {
-  res.json({
-    ok: true,
-    endpoints: ["/healthz", "/menu", "/contact", "/feedback (GET|POST)", "/posts (GET|POST)", "/inbox (GET|POST)", "/kpi"]
-  });
+app.get('/kpi', (req, res) => res.json(kpi));
+app.post('/kpi', (req, res) => {
+  const { metric, value } = req.body || {};
+  const item = { id: `kpi_${Date.now()}`, metric, value: Number(value || 0), capturedAt: new Date().toISOString() };
+  kpi.unshift(item);
+  res.status(201).json({ ok: true, item });
 });
 
-// ---- start ----
-const PORT = process.env.PORT || 3000;
+// ===== Webhook (HMAC SHA-256) =====
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'dev_secret';
+
+function verifySignature(req, res, next) {
+  const sig = req.header('x-signature') || '';
+  const payload = JSON.stringify(req.body || {});
+  const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex');
+
+  // tránh exception khi độ dài khác nhau
+  if (!sig || sig.length !== hmac.length) {
+    return res.status(401).json({ ok: false, error: 'invalid_signature' });
+  }
+  const ok = crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(sig));
+  if (!ok) return res.status(401).json({ ok: false, error: 'invalid_signature' });
+  next();
+}
+
+// Ví dụ: publish post -> đổi status sang 'published'
+app.post('/webhook/publish', verifySignature, (req, res) => {
+  const { event, id } = req.body || {};
+  if (event === 'published' && id) {
+    const idx = posts.findIndex(p => p.id === id);
+    if (idx > -1) posts[idx].status = 'published';
+  }
+  res.json({ ok: true });
+});
+
+// ----- Start
 app.listen(PORT, () => {
   console.log(`API running on :${PORT}`);
 });
