@@ -1,4 +1,4 @@
-// backend/server.js (CommonJS + webhook)
+// backend/server.js - CommonJS + webhook + mock API
 
 const express = require("express");
 const cors = require("cors");
@@ -8,89 +8,76 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===== Cấu hình secret cho webhook =====
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "dev_secret";
-
-// ===== DỮ LIỆU GIẢ ĐƠN GIẢN CHO PROJECT =====
-
-// Menu bánh
+// ==========================
+// Mock data (menu, inbox, KPI)
+// ==========================
 const menuItems = [
-  {
-    id: "cake_1",
-    name: "Strawberry Heaven",
-    price: 49000,
-    description: "Bánh dâu tươi, kem béo nhẹ, vị chua ngọt dễ ăn."
-  },
-  {
-    id: "cake_2",
-    name: "Chocolate Dream",
-    price: 55000,
-    description: "Bánh socola phủ ganache, hợp gu ngọt đậm."
-  },
-  {
-    id: "drink_1",
-    name: "Cold Brew Caramel",
-    price: 45000,
-    description: "Cold brew vị caramel, ít đường."
-  }
+  { id: "m1", name: "Strawberry Heaven", price: 45000, category: "cake" },
+  { id: "m2", name: "Chocolate Cloud", price: 42000, category: "cake" },
+  { id: "m3", name: "Caramel Latte", price: 39000, category: "drink" },
 ];
 
-// Feedback & Contact lưu tạm trong RAM
 const feedbacks = [];
-const contacts = [];
-
-// KPI / Inbox giả lập cho trang admin
 const inboxMessages = [];
+const posts = [];
+
 const kpis = [
   {
-    id: "kpi_1",
-    metric: "total_posts",
-    value: 3,
-    capturedAt: new Date().toISOString()
-  }
+    id: "kpi-orders-today",
+    metric: "orders_today",
+    value: 23,
+    capturedAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-visits-today",
+    metric: "visits_today",
+    value: 145,
+    capturedAt: new Date().toISOString(),
+  },
 ];
 
-// ===== Middleware kiểm tra chữ ký HMAC =====
+// ==========================
+// Webhook HMAC
+// ==========================
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "dev_secret";
+
+// Middleware kiểm tra chữ ký
 function verifySignature(req, res, next) {
+  const signature = req.header("x-signature") || "";
+  const payload = JSON.stringify(req.body || {});
+
+  const hmac = crypto
+    .createHmac("sha256", WEBHOOK_SECRET)
+    .update(payload)
+    .digest("hex");
+
   try {
-    const signature = req.header("x-signature") || "";
-    const payload = JSON.stringify(req.body || {});
+    const sigBuf = Buffer.from(signature);
+    const hmacBuf = Buffer.from(hmac);
 
-    const hmac = crypto
-      .createHmac("sha256", WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    const sigBuf = Buffer.from(signature, "utf8");
-    const hmacBuf = Buffer.from(hmac, "utf8");
-
-    if (sigBuf.length !== hmacBuf.length) {
-      return res
-        .status(401)
-        .json({ ok: false, error: "invalid_signature" });
+    if (
+      sigBuf.length === hmacBuf.length &&
+      crypto.timingSafeEqual(hmacBuf, sigBuf)
+    ) {
+      return next();
     }
-
-    if (!crypto.timingSafeEqual(hmacBuf, sigBuf)) {
-      return res
-        .status(401)
-        .json({ ok: false, error: "invalid_signature" });
-    }
-
-    return next();
   } catch (err) {
     console.error("verifySignature error:", err);
-    return res.status(400).json({ ok: false, error: "bad_request" });
   }
+
+  return res.status(401).json({ ok: false, error: "invalid_signature" });
 }
 
-// ===== ROUTE CƠ BẢN CHO FRONTEND =====
+// ==========================
+// Public routes
+// ==========================
 
-// Health check
+// Test hệ thống
 app.get("/healthz", (req, res) => {
   res.json({ ok: true });
 });
 
-// Menu
+// Menu cho trang public
 app.get("/menu", (req, res) => {
   res.json(menuItems);
 });
@@ -102,35 +89,53 @@ app.get("/feedback", (req, res) => {
 
 app.post("/feedback", (req, res) => {
   const { name, message } = req.body || {};
-  const item = {
-    id: String(Date.now()),
-    name: name || "Anonymous",
-    message: message || "",
-    createdAt: new Date().toISOString()
+  if (!name || !message) {
+    return res.status(400).json({ ok: false, error: "name_and_message_required" });
+  }
+
+  const fb = {
+    id: `fb_${Date.now()}`,
+    name,
+    message,
+    createdAt: new Date().toISOString(),
   };
-  feedbacks.push(item);
-  res.status(201).json(item);
+
+  feedbacks.push(fb);
+  // cũng đẩy vào inbox cho admin xem
+  inboxMessages.unshift({
+    id: fb.id,
+    channel: "feedback",
+    sender: name,
+    message,
+    createdAt: fb.createdAt,
+  });
+
+  res.json({ ok: true, feedback: fb });
 });
 
-// Contact
-app.get("/contact", (req, res) => {
-  res.json(contacts);
-});
-
+// Contact form
 app.post("/contact", (req, res) => {
   const { name, email, message } = req.body || {};
-  const item = {
-    id: String(Date.now()),
-    name: name || "",
-    email: email || "",
-    message: message || "",
-    createdAt: new Date().toISOString()
+  if (!name || !email || !message) {
+    return res.status(400).json({ ok: false, error: "missing_fields" });
+  }
+
+  const msg = {
+    id: `ct_${Date.now()}`,
+    channel: "contact",
+    sender: name,
+    email,
+    message,
+    createdAt: new Date().toISOString(),
   };
-  contacts.push(item);
-  res.status(201).json(item);
+
+  inboxMessages.unshift(msg);
+  res.json({ ok: true, received: msg });
 });
 
-// ===== ROUTE CHO ADMIN (GIẢ LẬP) =====
+// ==========================
+// Admin routes (Inbox / KPI / Posts)
+// ==========================
 
 app.get("/admin/inbox", (req, res) => {
   res.json(inboxMessages);
@@ -140,27 +145,63 @@ app.get("/admin/kpi", (req, res) => {
   res.json(kpis);
 });
 
-// ===== WEBHOOK /webhook/publish =====
+app.get("/admin/posts", (req, res) => {
+  res.json(posts);
+});
+
+app.post("/admin/posts", (req, res) => {
+  const { channel, title, content, scheduledAt } = req.body || {};
+  const post = {
+    id: `post_${Date.now()}`,
+    channel: channel || "facebook",
+    title: title || "(No title)",
+    content: content || "",
+    scheduledAt: scheduledAt || null,
+    status: "draft",
+    createdAt: new Date().toISOString(),
+  };
+  posts.unshift(post);
+  res.json({ ok: true, post });
+});
+
+// ==========================
+// 📌 WEBHOOK CHÍNH Ở ĐÂY
+// ==========================
 
 app.post("/webhook/publish", verifySignature, (req, res) => {
   console.log("Webhook nhận payload:", req.body);
 
-  // Ví dụ: nếu event = published thì đẩy message vào inbox (cho vui)
-  if (req.body && req.body.event === "published") {
-    inboxMessages.push({
-      id: String(Date.now()),
+  // Ví dụ: nếu event = "published" thì đẩy message vào inbox
+  const { event, id, channel, message } = req.body || {};
+  if (event === "published" && message) {
+    const msg = {
+      id: id || `wh_${Date.now()}`,
+      channel: channel || "webhook",
       sender: "Webhook",
-      message: `Post ${req.body.id || "unknown"} đã published`,
-      createdAt: new Date().toISOString()
-    });
+      message,
+      createdAt: new Date().toISOString(),
+    };
+    inboxMessages.unshift(msg);
   }
 
   res.json({ ok: true, received: req.body });
 });
 
-// ===== Khởi động server =====
+// ==========================
+// 404 fallback
+// ==========================
+
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+// ==========================
+// Start server
+// ==========================
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`API chạy cổng ${PORT}`);
+  console.log(`API running on port ${PORT}`);
 });
+
+module.exports = app;
