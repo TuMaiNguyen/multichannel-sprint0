@@ -1,34 +1,33 @@
 // backend/server.js
+
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
 
 const app = express();
+const PORT = process.env.PORT || 10000;
 
+// Middleware chung
 app.use(cors());
 app.use(express.json());
 
-// ======= CONFIG =======
-const PORT = process.env.PORT || 10000;
-
-// Dùng chung 1 secret cố định để khỏi bị lệch giữa server & Git Bash
-// NHỚ: chuỗi này phải trùng với chuỗi em dùng khi ký ở Git Bash
+// 🔐 Secret HMAC – để đơn giản mình hard-code cho trùng 100% với Git Bash
 const WEBHOOK_SECRET = "sh_dev_2_025_mai";
 
-// ======= IN-MEMORY "DB" ĐƠN GIẢN =======
+// ====== In-memory store đơn giản ======
 const menuItems = [
-  { id: 1, name: "Strawberry Heaven", price: 45000, channel: "Facebook" },
-  { id: 2, name: "Chocolate Dream",   price: 48000, channel: "Instagram" },
-  { id: 3, name: "Matcha Cloud",      price: 42000, channel: "Tiktok" },
+  { id: 1, name: "Strawberry Heaven", price: 45000 },
+  { id: 2, name: "Chocolate Dream", price: 48000 },
+  { id: 3, name: "Matcha Cloud", price: 42000 },
 ];
 
 const feedbackList = [];
 const contactList = [];
-const inboxMessages = []; // để dành cho admin inbox nếu cần
+const inboxMessages = [];
 
-// ======= HELPER: KIỂM TRA CHỮ KÝ HMAC =======
+// ====== Middleware verify chữ ký HMAC ======
 function verifySignature(req, res, next) {
-  const signature = req.headers["x-signature"] || "";
+  const signature = req.header("x-signature") || "";
   const payload = JSON.stringify(req.body || {});
 
   const hmac = crypto
@@ -36,68 +35,80 @@ function verifySignature(req, res, next) {
     .update(payload)
     .digest("hex");
 
-  if (hmac === signature) {
-    return next();
+  if (!signature) {
+    return res.status(401).json({ ok: false, error: "missing_signature" });
   }
 
-  return res.status(401).json({ ok: false, error: "invalid_signature" });
+  try {
+    const sigBuf = Buffer.from(signature, "hex");
+    const hmacBuf = Buffer.from(hmac, "hex");
+
+    if (sigBuf.length !== hmacBuf.length) {
+      return res.status(401).json({ ok: false, error: "invalid_signature" });
+    }
+
+    if (crypto.timingSafeEqual(sigBuf, hmacBuf)) {
+      return next();
+    }
+
+    return res.status(401).json({ ok: false, error: "invalid_signature" });
+  } catch (err) {
+    console.error("verifySignature error:", err);
+    return res.status(401).json({ ok: false, error: "invalid_signature" });
+  }
 }
 
-// ======= ROUTES CŨ (MENU / CONTACT / FEEDBACK) =======
-
-// Health check
+// ====== Route test hệ thống ======
 app.get("/healthz", (req, res) => {
   res.json({ ok: true });
 });
 
-// Public menu
+// ====== API public cho frontend ======
+
+// Menu
 app.get("/menu", (req, res) => {
-  res.json({ ok: true, items: menuItems });
+  res.json(menuItems);
 });
 
-// Contact form
-app.post("/contact", (req, res) => {
-  const { name, email, message } = req.body || {};
-
-  const item = {
-    id: Date.now().toString(),
-    name: name || "",
-    email: email || "",
-    message: message || "",
-    createdAt: new Date().toISOString(),
-  };
-
-  contactList.push(item);
-  res.status(201).json({ ok: true, contact: item });
-});
-
-// Feedback form
-app.post("/feedback", (req, res) => {
-  const { name, message } = req.body || {};
-
-  const item = {
-    id: Date.now().toString(),
-    name: name || "",
-    message: message || "",
-    createdAt: new Date().toISOString(),
-  };
-
-  feedbackList.push(item);
-  res.status(201).json({ ok: true, feedback: item });
-});
-
-// Optional: list feedback (cho admin xem)
+// Feedback
 app.get("/feedback", (req, res) => {
-  res.json({ ok: true, items: feedbackList });
+  res.json(feedbackList);
 });
 
-// ======= WEBHOOK PUBLISH =======
+app.post("/feedback", (req, res) => {
+  const item = {
+    id: Date.now().toString(),
+    name: req.body.name || "Anonymous",
+    message: req.body.message || "",
+    createdAt: new Date().toISOString(),
+  };
+  feedbackList.push(item);
+  res.status(201).json(item);
+});
+
+// Contact
+app.get("/contact", (req, res) => {
+  res.json(contactList);
+});
+
+app.post("/contact", (req, res) => {
+  const item = {
+    id: Date.now().toString(),
+    name: req.body.name || "",
+    email: req.body.email || "",
+    message: req.body.message || "",
+    createdAt: new Date().toISOString(),
+  };
+  contactList.push(item);
+  res.status(201).json(item);
+});
+
+// ====== Webhook chính /webhook/publish ======
 app.post("/webhook/publish", verifySignature, (req, res) => {
-  // Lưu payload vô inbox cho vui, sau dùng admin dashboard cũng được
   const msg = {
     id: Date.now().toString(),
     payload: req.body,
-    receivedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
   };
   inboxMessages.push(msg);
 
@@ -106,7 +117,12 @@ app.post("/webhook/publish", verifySignature, (req, res) => {
   res.json({ ok: true, received: req.body });
 });
 
-// ======= START SERVER =======
+// (optional) xem inbox webhook
+app.get("/admin/inbox", (req, res) => {
+  res.json(inboxMessages);
+});
+
+// ====== Start server ======
 app.listen(PORT, () => {
   console.log(`API running on port ${PORT}`);
 });
