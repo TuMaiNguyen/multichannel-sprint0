@@ -1,89 +1,138 @@
-// backend/server.js — bản stable dùng CommonJS
+// backend/server.js
+// CommonJS version – chạy trên Render
 
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
 
 const app = express();
+const PORT = process.env.PORT || 10000;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
 
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(
+  express.json()
+);
 
-// 🔐 Secret để verify HMAC
-// Render đang để: WEBHOOK_SECRET=sh_dev_2025_mai
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "sh_dev_2025_mai";
+// In-memory store cho webhook events
+const events = [];
 
-// =========================
-// Middleware kiểm tra chữ ký
-// =========================
+// ------------------ PUBLIC API ------------------
+
+// Health check cho vui
+app.get("/healthz", (req, res) => {
+  res.json({ ok: true, status: "healthy" });
+});
+
+// Menu tiệm bánh
+app.get("/menu", (req, res) => {
+  res.json({
+    ok: true,
+    items: [
+      {
+        id: 1,
+        name: "Croissant bơ",
+        price: 32000,
+        description: "Bánh croissant bơ Pháp, lớp vỏ giòn, ruột bông."
+      },
+      {
+        id: 2,
+        name: "Tiramisu cacao",
+        price: 45000,
+        description: "Bánh lạnh vị cà phê & cacao, ngọt vừa."
+      },
+      {
+        id: 3,
+        name: "Trà sữa Sweet Heaven",
+        price: 39000,
+        description: "Trà sữa trân châu signature của tiệm."
+      }
+    ]
+  });
+});
+
+// Nhận góp ý khách hàng
+app.post("/feedback", (req, res) => {
+  const { name, message } = req.body || {};
+  console.log("[feedback]", { name, message });
+  // Không cần lưu DB, chỉ cần trả ok để FE biết là đã gửi thành công
+  res.json({ ok: true });
+});
+
+// Thông tin liên hệ chi nhánh
+app.get("/contact", (req, res) => {
+  res.json({
+    ok: true,
+    branches: [
+      {
+        id: 1,
+        name: "Sweet Heaven – Quận 1",
+        address: "123 Nguyễn Huệ, Q.1, TP.HCM",
+        phone: "0900 000 001"
+      },
+      {
+        id: 2,
+        name: "Sweet Heaven – Thủ Đức",
+        address: "45 Võ Văn Ngân, TP. Thủ Đức",
+        phone: "0900 000 002"
+      }
+    ]
+  });
+});
+
+// ------------------ WEBHOOK + HMAC ------------------
+
 function verifySignature(req, res, next) {
-  const signature = req.header("x-signature") || "";
-
-  if (!signature) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "missing_signature" });
+  if (!WEBHOOK_SECRET) {
+    return res.status(500).json({ ok: false, error: "missing_secret" });
   }
 
-  const payload = JSON.stringify(req.body || {});
+  const signature = req.header("x-signature");
+  if (!signature) {
+    return res.status(401).json({ ok: false, error: "missing_signature" });
+  }
 
-  const hmac = crypto
+  // Dùng JSON.stringify giống chuỗi BODY bên Git Bash
+  const payloadString = JSON.stringify(req.body || {});
+  const expected = crypto
     .createHmac("sha256", WEBHOOK_SECRET)
-    .update(payload)
+    .update(payloadString)
     .digest("hex");
 
-  const sigBuf = Buffer.from(signature, "utf8");
-  const hmacBuf = Buffer.from(hmac, "utf8");
-
-  if (sigBuf.length !== hmacBuf.length) {
-    return res
-      .status(401)
-      .json({ ok: false, error: "invalid_signature" });
-  }
-
-  if (!crypto.timingSafeEqual(sigBuf, hmacBuf)) {
-    return res
-      .status(401)
-      .json({ ok: false, error: "invalid_signature" });
+  if (signature !== expected) {
+    return res.status(401).json({ ok: false, error: "invalid_signature" });
   }
 
   next();
 }
 
-// ==================================
-// Route test hệ thống
-// ==================================
-app.get("/healthz", (req, res) => {
-  res.json({ ok: true });
-});
-
-// ==================================
-// Lưu các event nhận từ webhook
-// ==================================
-const events = [];
-
-// Webhook chính
 app.post("/webhook/publish", verifySignature, (req, res) => {
-  const evt = {
-    id: req.body.id || `evt_${Date.now()}`,
-    event: req.body.event || "unknown",
-    message: req.body.message || "",
-    createdAt: new Date().toISOString(),
+  const payload = req.body || {};
+
+  const event = {
+    id: payload.id || `evt_${Date.now()}`,
+    event: payload.event || "unknown",
+    message: payload.message || "",
+    channel: payload.channel || "webhook",
+    createdAt: new Date().toISOString()
   };
 
-  events.push(evt);
+  events.push(event);
 
-  console.log("Webhook nhận payload:", req.body);
-
-  res.json({ ok: true, received: req.body });
+  res.json({ ok: true, received: payload });
 });
 
-// Admin API: xem list events
+// ------------------ ADMIN API ------------------
+
 app.get("/admin/events", (req, res) => {
-  res.json({ ok: true, items: events });
+  res.json({
+    ok: true,
+    // cho dễ xem, đảo ngược cho event mới lên đầu
+    items: [...events].reverse()
+  });
 });
 
-// Admin API: stats đơn giản
 app.get("/admin/stats", (req, res) => {
   const totalEvents = events.length;
   const publishedCount = events.filter((e) => e.event === "published").length;
@@ -93,17 +142,16 @@ app.get("/admin/stats", (req, res) => {
     ok: true,
     totalEvents,
     publishedCount,
-    lastEvent,
+    lastEvent
   });
 });
 
-// 404 fallback
+// ------------------ FALLBACK 404 ------------------
+
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "not_found", path: req.path });
 });
 
-// Start server
-const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("API running on port", PORT);
+  console.log(`API running on port ${PORT}`);
 });
