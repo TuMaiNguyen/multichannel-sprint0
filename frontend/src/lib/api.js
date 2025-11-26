@@ -1,29 +1,64 @@
 // frontend/src/lib/api.js
-const API_BASE =
-  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE) ||
-  "https://sweet-heaven-api.onrender.com";
 
-async function handle(res) {
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`[${res.status}] ${t || res.statusText}`);
+const API_BASE = import.meta.env.VITE_API_BASE || "";
+
+// Hàm xử lý response chung
+async function handleResponse(res) {
+  const contentType = res.headers.get("content-type") || "";
+  let data = null;
+
+  if (contentType.includes("application/json")) {
+    data = await res.json();
+  } else {
+    const text = await res.text();
+    data = { ok: res.ok, raw: text };
   }
-  return res.json();
+
+  if (!res.ok) {
+    const message =
+      data?.error ||
+      data?.message ||
+      `API error ${res.status}: ${res.statusText}`;
+    throw new Error(message);
+  }
+
+  return data;
 }
 
+// GET /path
 export async function apiGet(path) {
-  const res = await fetch(`${API_BASE}${path}`, { credentials: "omit" });
-  return handle(res);
-}
-
-export async function apiPost(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body || {})
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
   });
-  return handle(res);
+  return handleResponse(res);
 }
 
-// Optional grouped export
-export const api = { get: apiGet, post: apiPost };
+// POST /path với body JSON
+export async function apiPost(path, body) {
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  return handleResponse(res);
+}
+
+// (Nếu cần) DELETE /path
+export async function apiDelete(path) {
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  return handleResponse(res);
+}

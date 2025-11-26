@@ -1,0 +1,18 @@
+@startuml
+actor Admin
+participant "Frontend" as FE
+participant "Backend" as BE
+participant "Scheduler (queue)" as SCH
+participant "Social Platform" as SP
+
+Admin -> FE: Soạn bài + chọn thời điểm
+FE -> BE: POST /posts (title, channel, scheduleAt)
+BE -> SCH: enqueue(job)
+... đến giờ hẹn ...
+SCH -> SP: Publish (API giả lập)
+SP -> BE: POST /webhook/social (event=published) + x-signature
+BE -> BE: Verify HMAC x-signature
+BE -> DB: Update posts.status=Published
+BE -> FE: push update (polling/refresh)
+FE -> Admin: Hiển thị "Published"
+@enduml

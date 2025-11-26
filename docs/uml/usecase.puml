@@ -1,0 +1,27 @@
+@startuml
+left to right direction
+actor Customer
+actor Admin
+actor Scheduler
+actor SocialPlatform as SP
+
+rectangle "Sweet Heaven CMS" {
+  usecase "Xem Menu" as UC1
+  usecase "Gửi Feedback" as UC2
+  usecase "Soạn Bài" as UC3
+  usecase "Lên lịch Xuất bản" as UC4
+  usecase "Xem Inbox" as UC5
+  usecase "Dashboard KPI" as UC6
+  usecase "Nhận Webhook & Auto-reply" as UC7
+}
+
+Customer --> UC1
+Customer --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+Admin --> UC6
+SP --> UC7
+Scheduler --> UC4
+
+@enduml

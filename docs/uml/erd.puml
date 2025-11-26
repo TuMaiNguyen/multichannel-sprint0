@@ -1,0 +1,42 @@
+@startuml
+hide methods
+hide stereotypes
+
+entity "Channel" as Channel {
+  *id: uuid
+  name: varchar
+}
+
+entity "Post" as Post {
+  *id: uuid
+  title: varchar
+  body: text
+  channel: varchar
+  scheduleAt: datetime
+  status: varchar
+  createdAt: datetime
+}
+
+entity "Feedback" as Feedback {
+  *id: uuid
+  name: varchar
+  message: text
+  createdAt: datetime
+}
+
+entity "InboxMessage" as Inbox {
+  *id: uuid
+  sender: varchar
+  message: text
+  createdAt: datetime
+}
+
+entity "KPI" as KPI {
+  *id: uuid
+  metric: varchar
+  value: numeric
+  capturedAt: datetime
+}
+
+Channel ||--o{ Post : has
+@enduml

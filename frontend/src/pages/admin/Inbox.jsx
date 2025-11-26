@@ -1,42 +1,76 @@
 // frontend/src/pages/admin/Inbox.jsx
 import { useEffect, useState } from "react";
-import { apiGet, apiPost } from "../../lib/api";
+import { apiGet } from "../../lib/api";
 
 export default function Inbox() {
-  const [items, setItems] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    apiGet("/inbox")
-      .then(setItems)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  async function reply(id) {
-    await apiPost(`/inbox/${id}/reply`, { message: "Cảm ơn bạn! 🧁" });
-    alert("Đã phản hồi (mô phỏng).");
+  async function loadEvents() {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await apiGet("/admin/events");
+      setEvents(data?.items ?? []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Không tải được danh sách sự kiện");
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (loading) return <div className="p-4">Đang tải hộp thư…</div>;
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
   return (
-    <div className="p-4 space-y-3">
-      <h1 className="text-2xl font-semibold mb-2">Tin nhắn khách hàng</h1>
-      {items.map(m => (
-        <div key={m.id} className="border rounded p-3 bg-white/70">
-          <div className="text-sm text-gray-500">{new Date(m.ts).toLocaleString()}</div>
-          <div className="font-medium">{m.from}</div>
-          <div>{m.message}</div>
-          <button
-            onClick={()=>reply(m.id)}
-            className="mt-2 px-3 py-1 rounded bg-blue-600 text-white hover:opacity-90"
-          >
-            Trả lời
-          </button>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <h1>Inbox – Webhook events</h1>
+        <button onClick={loadEvents}>Refresh</button>
+      </div>
+
+      {loading && <p>Đang tải dữ liệu...</p>}
+      {!loading && error && <p className="error">{error}</p>}
+
+      {!loading && !error && events.length === 0 && (
+        <p>Chưa có sự kiện nào được ghi nhận.</p>
+      )}
+
+      {!loading && !error && events.length > 0 && (
+        <div className="table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ID</th>
+                <th>Event</th>
+                <th>Message</th>
+                <th>Thời gian</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((evt, idx) => (
+                <tr key={evt.id ?? idx}>
+                  <td>{idx + 1}</td>
+                  <td>{evt.id ?? "—"}</td>
+                  <td>{evt.event ?? "unknown"}</td>
+                  <td>{evt.message ?? evt.payload?.message ?? "—"}</td>
+                  <td>
+                    {evt.timestamp ||
+                      evt.createdAt ||
+                      evt.receivedAt ||
+                      "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
-      {items.length === 0 && <p className="text-gray-600">Chưa có tin nhắn.</p>}
+      )}
     </div>
   );
 }
