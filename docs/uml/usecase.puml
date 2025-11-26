@@ -1,27 +1,62 @@
 @startuml
 left to right direction
-actor Customer
-actor Admin
-actor Scheduler
-actor SocialPlatform as SP
-
-rectangle "Sweet Heaven CMS" {
-  usecase "Xem Menu" as UC1
-  usecase "Gửi Feedback" as UC2
-  usecase "Soạn Bài" as UC3
-  usecase "Lên lịch Xuất bản" as UC4
-  usecase "Xem Inbox" as UC5
-  usecase "Dashboard KPI" as UC6
-  usecase "Nhận Webhook & Auto-reply" as UC7
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FFF6FB
+  BorderColor #E67BA0
 }
 
-Customer --> UC1
-Customer --> UC2
-Admin --> UC3
-Admin --> UC4
-Admin --> UC5
-Admin --> UC6
-SP --> UC7
-Scheduler --> UC4
+actor "Admin" as Admin
+actor "Editor" as Editor
+actor "Operator" as Operator
+actor "Guest\n(Khách hàng)" as Guest
+actor "Social Platform\n(Facebook/Zalo/TikTok...)" as Social
+actor "System Scheduler" as Scheduler
+
+rectangle "Sweet Heaven Bakery – Media Hub" {
+
+  (UC01 Xem menu bánh) as UC01
+  (UC02 Gửi feedback) as UC02
+  (UC03 Xem thông tin liên hệ\nchi nhánh) as UC03
+
+  (UC04 Soạn & lưu bài viết) as UC04
+  (UC05 Lên lịch & duyệt bài) as UC05
+  (UC06 Đăng bài theo lịch) as UC06
+  (UC07 Nhận webhook sự kiện\nMXH) as UC07
+  (UC08 Ghi nhận & thống kê\nsự kiện webhook) as UC08
+  (UC09 Xem Dashboard KPI) as UC09
+  (UC10 Xem Inbox sự kiện/\ntin nhắn) as UC10
+  (UC11 Cấu hình rule\nauto-reply (thiết kế)) as UC11
+}
+
+' Guest – các trang public
+Guest --> UC01
+Guest --> UC02
+Guest --> UC03
+
+' Editor – CMS
+Editor --> UC04
+Editor --> UC05
+
+' Admin – quản trị & KPI
+Admin --> UC05
+Admin --> UC09
+Admin --> UC11
+
+' Operator – chăm sóc khách hàng
+Operator --> UC10
+Operator --> UC11
+
+' Scheduler nội bộ
+Scheduler --> UC06
+
+' Social platform bên ngoài
+Social --> UC07
+
+' Liên kết giữa các usecase nội bộ
+UC06 --> UC07 : sinh sự kiện\ntrên MXH (mô phỏng)
+UC07 --> UC08 : lưu WebhookEvent
+UC08 --> UC09 : cung cấp dữ liệu\ncho Dashboard
+UC08 --> UC10 : cung cấp dữ liệu\ncho Inbox
 
 @enduml

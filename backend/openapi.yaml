@@ -1,0 +1,461 @@
+openapi: 3.0.3
+info:
+  title: Sweet Heaven Bakery – Media Hub API
+  version: "1.0.0"
+  description: >
+    REST API cho đồ án "Cổng truyền thông số chuỗi Bakery – Sweet Heaven Bakery – Media Hub".
+    Backend được xây dựng bằng Node.js + Express (server.js) và triển khai trên Render.
+
+servers:
+  - url: http://localhost:10000
+    description: Local development (PORT=10000)
+  - url: https://sweet-heaven-api.onrender.com
+    description: Render production
+
+tags:
+  - name: System
+    description: Endpoint kiểm tra sức khỏe hệ thống.
+  - name: Public
+    description: API public cho website khách hàng.
+  - name: Webhook
+    description: API webhook tích hợp từ nền tảng bên ngoài.
+  - name: Admin
+    description: API cho trang quản trị (Dashboard, Inbox).
+
+paths:
+  /healthz:
+    get:
+      tags: [System]
+      summary: Kiểm tra trạng thái server
+      description: >
+        Endpoint đơn giản để kiểm tra server còn sống.
+        Trong server.js trả về `{ ok: true, status: "healthy" }`.
+      responses:
+        "200":
+          description: Trả về trạng thái OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              example:
+                ok: true
+                status: healthy
+
+  /menu:
+    get:
+      tags: [Public]
+      summary: Lấy menu tiệm bánh
+      description: >
+        Trả về danh sách món trong menu. Trong server.js trả về
+        `{ ok: true, items: [...] }` với 3 món demo.
+      responses:
+        "200":
+          description: Menu hiện tại.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuResponse"
+              example:
+                ok: true
+                items:
+                  - id: 1
+                    name: "Croissant bơ"
+                    price: 32000
+                    description: "Bánh croissant bơ Pháp, lớp vỏ giòn, ruột bông."
+                  - id: 2
+                    name: "Tiramisu cacao"
+                    price: 45000
+                    description: "Bánh lạnh vị cà phê & cacao, ngọt vừa."
+                  - id: 3
+                    name: "Trà sữa Sweet Heaven"
+                    price: 39000
+                    description: "Trà sữa trân châu signature của tiệm."
+
+  /feedback:
+    post:
+      tags: [Public]
+      summary: Gửi góp ý khách hàng
+      description: >
+        Nhận góp ý từ khách truy cập website. Trong server.js chỉ log ra console
+        và trả JSON `{ ok: true }`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+            example:
+              name: "Nguyễn Đỗ Tú Mai"
+              message: "Menu online rất dễ xem, nhưng nên thêm mục combo."
+      responses:
+        "200":
+          description: Gửi feedback thành công.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResponse"
+              example:
+                ok: true
+
+  /contact:
+    get:
+      tags: [Public]
+      summary: Lấy thông tin liên hệ chi nhánh
+      description: >
+        Trả về thông tin liên hệ của các chi nhánh. Trong server.js trả về
+        `{ ok: true, branches: [...] }`.
+      responses:
+        "200":
+          description: Danh sách chi nhánh.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactResponse"
+              example:
+                ok: true
+                branches:
+                  - id: 1
+                    name: "Sweet Heaven – Quận 1"
+                    address: "123 Nguyễn Huệ, Q.1, TP.HCM"
+                    phone: "0900 000 001"
+                  - id: 2
+                    name: "Sweet Heaven – Thủ Đức"
+                    address: "45 Võ Văn Ngân, TP. Thủ Đức"
+                    phone: "0900 000 002"
+
+  /webhook/publish:
+    post:
+      tags: [Webhook]
+      summary: Nhận webhook publish từ nền tảng ngoài
+      description: >
+        Endpoint `/webhook/publish` được bảo vệ bằng HMAC SHA-256.
+        Middleware `verifySignature` trong server.js:
+        - Lấy secret từ `process.env.WEBHOOK_SECRET`
+        - Đọc header `x-signature`
+        - So sánh với HMAC của `JSON.stringify(req.body)`
+        - Nếu sai/thiếu → trả 401 với error tương ứng.
+
+        Nếu hợp lệ, server đẩy event vào mảng in-memory `events` và trả:
+        `{ ok: true, received: <payload gốc> }`.
+      security:
+        - WebhookSignature: []
+      parameters:
+        - in: header
+          name: x-signature
+          required: true
+          schema:
+            type: string
+          description: >
+            HMAC SHA-256 (hex) của JSON.stringify(body) dùng secret `WEBHOOK_SECRET`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookPayload"
+            example:
+              event: "published"
+              id: "test"
+              message: "Hello from webhook"
+              channel: "FACEBOOK"
+      responses:
+        "200":
+          description: Chữ ký hợp lệ, event được ghi nhận.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookAcceptedResponse"
+              example:
+                ok: true
+                received:
+                  event: "published"
+                  id: "test"
+                  message: "Hello from webhook"
+                  channel: "FACEBOOK"
+        "401":
+          description: Thiếu hoặc sai chữ ký HMAC.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingSignature:
+                  summary: Thiếu header x-signature
+                  value:
+                    ok: false
+                    error: "missing_signature"
+                invalidSignature:
+                  summary: Chữ ký sai
+                  value:
+                    ok: false
+                    error: "invalid_signature"
+        "500":
+          description: Thiếu secret hoặc lỗi nội bộ.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingSecret:
+                  summary: Chưa cấu hình WEBHOOK_SECRET
+                  value:
+                    ok: false
+                    error: "missing_secret"
+                internalError:
+                  summary: Lỗi nội bộ khác
+                  value:
+                    ok: false
+                    error: "internal_error"
+
+  /admin/events:
+    get:
+      tags: [Admin]
+      summary: Lấy danh sách event cho Inbox
+      description: >
+        Trả về danh sách event webhook đã lưu trong mảng `events`.
+        Trong server.js trả `{ ok: true, items: [...events].reverse() }`.
+      responses:
+        "200":
+          description: Danh sách event, event mới nhất đứng đầu.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminEventsResponse"
+              example:
+                ok: true
+                items:
+                  - id: "test"
+                    event: "published"
+                    message: "Hello from webhook"
+                    channel: "FACEBOOK"
+                    createdAt: "2025-11-26T15:00:00.000Z"
+                  - id: "evt_1732620000000"
+                    event: "unknown"
+                    message: ""
+                    channel: "webhook"
+                    createdAt: "2025-11-26T14:59:59.000Z"
+
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Lấy thống kê Dashboard
+      description: >
+        Tính toán từ mảng `events`:
+        - totalEvents: tổng số event
+        - publishedCount: số event có event === "published"
+        - lastEvent: event cuối cùng trong mảng (hoặc null).
+      responses:
+        "200":
+          description: Thống kê tổng hợp cho Dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+              example:
+                ok: true
+                totalEvents: 3
+                publishedCount: 2
+                lastEvent:
+                  id: "last-id"
+                  event: "published"
+                  message: "Black Friday combo"
+                  channel: "FACEBOOK"
+                  createdAt: "2025-11-26T16:30:00.000Z"
+
+components:
+  securitySchemes:
+    WebhookSignature:
+      type: apiKey
+      in: header
+      name: x-signature
+      description: >
+        Chữ ký HMAC SHA-256 (hex) của JSON.stringify(body) dùng secret WEBHOOK_SECRET.
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        status:
+          type: string
+          example: healthy
+      required:
+        - ok
+        - status
+
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+          format: float
+        description:
+          type: string
+      required:
+        - id
+        - name
+        - price
+
+    MenuResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MenuItem"
+      required:
+        - ok
+        - items
+
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+      required:
+        - id
+        - name
+        - address
+        - phone
+
+    ContactResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        branches:
+          type: array
+          items:
+            $ref: "#/components/schemas/Branch"
+      required:
+        - ok
+        - branches
+
+    FeedbackInput:
+      type: object
+      properties:
+        name:
+          type: string
+        message:
+          type: string
+      required:
+        - name
+        - message
+
+    FeedbackResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+
+    WebhookPayload:
+      type: object
+      description: Payload JSON mà web platform gửi vào webhook.
+      properties:
+        event:
+          type: string
+          description: Loại event (published, message, ...).
+        id:
+          type: string
+          description: Mã event từ phía platform hoặc client.
+        message:
+          type: string
+          description: Nội dung mô tả event.
+        channel:
+          type: string
+          description: Kênh (FACEBOOK, ZALO, ...). Nếu không có sẽ default "webhook".
+      required:
+        - id
+        - event
+
+    WebhookAcceptedResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        received:
+          $ref: "#/components/schemas/WebhookPayload"
+      required:
+        - ok
+        - received
+
+    AdminEvent:
+      type: object
+      description: >
+        Đối tượng event được lưu trong mảng `events` của server.js.
+      properties:
+        id:
+          type: string
+        event:
+          type: string
+        message:
+          type: string
+        channel:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - event
+        - channel
+        - createdAt
+
+    AdminEventsResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminEvent"
+      required:
+        - ok
+        - items
+
+    AdminStats:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        totalEvents:
+          type: integer
+          minimum: 0
+        publishedCount:
+          type: integer
+          minimum: 0
+        lastEvent:
+          $ref: "#/components/schemas/AdminEvent"
+          nullable: true
+      required:
+        - ok
+        - totalEvents
+        - publishedCount
+
+    ErrorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          default: false
+        error:
+          type: string
+      required:
+        - ok
+        - error

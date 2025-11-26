@@ -1,18 +1,46 @@
 @startuml
-actor Admin
-participant "Frontend" as FE
-participant "Backend" as BE
-participant "Scheduler (queue)" as SCH
-participant "Social Platform" as SP
+title Luồng đăng bài hẹn giờ & nhận webhook thống kê
 
-Admin -> FE: Soạn bài + chọn thời điểm
-FE -> BE: POST /posts (title, channel, scheduleAt)
-BE -> SCH: enqueue(job)
-... đến giờ hẹn ...
-SCH -> SP: Publish (API giả lập)
-SP -> BE: POST /webhook/social (event=published) + x-signature
-BE -> BE: Verify HMAC x-signature
-BE -> DB: Update posts.status=Published
-BE -> FE: push update (polling/refresh)
-FE -> Admin: Hiển thị "Published"
+actor Editor
+actor Admin
+
+participant "Admin FE\n(Compose/Calendar)" as FECompose
+participant "Backend API\n(Express server)" as API
+participant "Social Platform\n(Facebook/Zalo – mock)" as Social
+participant "Webhook endpoint\nPOST /webhook/publish" as Webhook
+participant "Admin FE\n(Dashboard/Inbox)" as FEDashboard
+
+== Soạn bài & lên lịch ==
+
+Editor -> FECompose : Mở màn Compose\n/#/admin/compose
+FECompose -> Editor : Hiển thị form bài viết
+
+Editor -> FECompose : Nhập tiêu đề, nội dung,\nchọn kênh & thời gian đăng
+FECompose -> API : POST /admin/posts\n(body: bài viết + scheduled_at)
+API --> FECompose : 201 Created\n(status = "Scheduled")
+
+== Đến thời điểm đăng bài (Scheduler nội bộ) ==
+
+FECompose -> API : (Scheduler / cron)\nPOST /admin/posts/{id}/publish
+API -> Social : POST /social/publish (mock)\n(body: nội dung bài)
+Social --> API : 200 OK
+
+== Nền tảng MXH gửi webhook về hệ thống ==
+
+Social -> Webhook : POST /webhook/publish\nbody: event JSON\nheader: x-signature (HMAC)
+Webhook -> Webhook : Verify HMAC\nbằng WEBHOOK_SECRET
+Webhook -> API : Lưu WebhookEvent\n(tăng totalEvents, publishedCount)
+API --> Webhook : OK
+Webhook --> Social : { "ok": true, "received": {...} }
+
+== Admin xem Dashboard & Inbox ==
+
+Admin -> FEDashboard : Mở Dashboard\n/#/admin
+FEDashboard -> API : GET /admin/stats
+API --> FEDashboard : { totalEvents,\n  publishedCount,\n  lastEvent }
+
+Admin -> FEDashboard : Chuyển tab Inbox\n/#/admin/inbox
+FEDashboard -> API : GET /admin/events
+API --> FEDashboard : [ danh sách WebhookEvent ]
+
 @enduml
