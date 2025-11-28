@@ -1,55 +1,136 @@
+// frontend/src/pages/public/Home.jsx
+import React from "react";
+
+// IMPORT 6 HÌNH HOME MỚI
+import img1 from "../../assets/home/home-croissant.jpg";
+import img2 from "../../assets/home/home-tiramisu.jpg";
+import img3 from "../../assets/home/home-tra-sua.jpg";
+import img4 from "../../assets/home/home-mousse.jpg";
+import img5 from "../../assets/home/home-cheesecake.jpg";
+import img6 from "../../assets/home/home-matcha.jpg";
+
 export default function Home() {
-  const banners = [
-    'https://images.unsplash.com/photo-1541167760496-1628856ab772',
-    'https://images.unsplash.com/photo-1519682337058-a94d519337bc',
-    'https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642',
-    'https://images.unsplash.com/photo-1508737804141-4c3b688e2546',
-    'https://images.unsplash.com/photo-1555507036-ab1f4038808a',
-    'https://images.unsplash.com/photo-1551022370-1b2d3f5f7f2a',
-  ]
-
   return (
-    <section className="space-y-10">
-      <div className="overflow-hidden rounded-3xl bg-white/70 backdrop-blur p-8 shadow-soft">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black leading-tight">
-              Sweet Heaven Bakery
-            </h1>
-            <p className="mt-3 text-slate-600 text-lg">
-              Bánh tươi mỗi ngày — công thức chuẩn Pháp, nguyên liệu chọn lọc.
-            </p>
-            <ul className="mt-4 text-slate-700 list-disc list-inside space-y-1">
-              <li>Combo 3 bánh bất kỳ giảm 10%</li>
-              <li>Đặt trước online nhận tại cửa hàng trong 30 phút</li>
-              <li>Giao nhanh nội thành</li>
-            </ul>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {banners.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                className={`rounded-2xl shadow-soft object-cover aspect-square ${i % 5 === 0 ? 'col-span-2' : ''}`}
-                alt="Bánh tiệm"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+    <main
+      className="page page-home"
+      style={{
+        animation: "fadeIn 0.8s ease-out",
+      }}
+    >
+      {/* Hero Section */}
+      <section
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "40px",
+          padding: "48px 28px 60px",
+          alignItems: "center",
+        }}
+      >
+        {/* TEXT BÊN TRÁI */}
+        <div
+          style={{
+            flex: "1 1 340px",
+            maxWidth: "520px",
+            animation: "slideInLeft 0.9s ease",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "44px",
+              fontWeight: 800,
+              color: "#111827",
+              lineHeight: 1.1,
+              marginBottom: "16px",
+            }}
+          >
+            Sweet Heaven Bakery
+          </h1>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        {[
-          {t:'Nguyên liệu chuẩn', d:'Bơ, bột, sữa cao cấp — tốt cho sức khoẻ.'},
-          {t:'Nướng theo mẻ', d:'Luôn ấm giòn, hạn chế tồn kho.'},
-          {t:'Giao nhanh', d:'Ship nội thành trong 30 phút.'},
-        ].map((it, i) => (
-          <div key={i} className="rounded-2xl bg-white p-4 shadow-soft">
-            <div className="font-semibold">{it.t}</div>
-            <div className="text-sm text-slate-600">{it.d}</div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
+          <p
+            style={{
+              fontSize: "17px",
+              color: "#4b5563",
+              marginBottom: "18px",
+              lineHeight: 1.6,
+            }}
+          >
+            Nơi mỗi chiếc bánh đều được chăm chút tỉ mỉ — từ nguyên liệu chọn lọc,
+            công thức chuẩn Pháp đến hương vị ngọt ngào khiến bạn nhớ mãi.
+          </p>
+
+          <ul
+            style={{
+              fontSize: "15px",
+              color: "#374151",
+              lineHeight: 1.8,
+              paddingLeft: "20px",
+            }}
+          >
+            <li>Giảm ngay 10% cho combo 3 bánh bất kỳ</li>
+            <li>Đặt online – nhận bánh trong vòng 30 phút</li>
+            <li>Giao nhanh nội thành TP.HCM</li>
+          </ul>
+        </div>
+
+        {/* GRID HÌNH BÊN PHẢI */}
+        <div
+          style={{
+            flex: "1 1 360px",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "14px",
+            minWidth: "360px",
+          }}
+        >
+          {[img1, img2, img3, img4, img5, img6].map((img, index) => (
+            <div
+              key={index}
+              style={{
+                borderRadius: "18px",
+                overflow: "hidden",
+                height: "140px",
+                animation: `fadeUp 0.8s ease ${index * 0.1}s`,
+              }}
+              className="hover-zoom"
+            >
+              <img
+                src={img}
+                alt={`Bakery item ${index + 1}`}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transition: "transform 0.4s ease",
+                }}
+                className="hover-zoom-img"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ANIMATION CSS INLINE */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hover-zoom:hover img {
+          transform: scale(1.07);
+        }
+      `}</style>
+    </main>
+  );
 }
