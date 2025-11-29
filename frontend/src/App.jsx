@@ -1,70 +1,52 @@
-import { NavLink, Routes, Route } from 'react-router-dom'
-import Home from './pages/public/Home.jsx'
-import Menu from './pages/public/Menu.jsx'
-import Feedback from './pages/public/Feedback.jsx'
-import Contact from './pages/public/Contact.jsx'
-import NotFound from './pages/public/NotFound.jsx'
+// frontend/src/App.jsx
+import React from "react";
+import { NavLink, Route, Routes } from "react-router-dom";
 
-// Admin pages
-import AdminLayout from './pages/admin/AdminLayout.jsx'
-import AdminDashboard from './pages/admin/Dashboard.jsx'
-import AdminCompose from './pages/admin/Compose.jsx'
-import AdminCalendar from './pages/admin/Calendar.jsx'
-import AdminInbox from './pages/admin/Inbox.jsx'
+import Home from "./pages/public/Home";
+import Menu from "./pages/public/Menu";
+import Feedback from "./pages/public/Feedback";
+import Contact from "./pages/public/Contact";
+import NotFound from "./pages/public/NotFound";
 
-const LinkItem = ({ to, label }) => (
-  <NavLink
-    to={to}
-    end
-    className={({ isActive }) =>
-      `nav-link ${isActive ? 'nav-link-active' : 'hover:bg-slate-100'}`
-    }
-  >
-    {label}
-  </NavLink>
-)
+import ProductDetail from "./pages/public/ProductDetail";
+import CartPage from "./pages/public/Cart";
+import CheckoutPage from "./pages/public/Checkout";
+
+import AdminPage from "./pages/admin/Admin";
 
 export default function App() {
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b">
-        <div className="mx-auto max-w-6xl flex items-center justify-between p-4">
-          <div className="text-xl font-extrabold text-brand-700">Sweet Heaven</div>
-          <nav className="flex gap-2">
-            <LinkItem to="/" label="Home" />
-            <LinkItem to="/menu" label="Menu" />
-            <LinkItem to="/feedback" label="Feedback" />
-            <LinkItem to="/contact" label="Contact" />
-            <LinkItem to="/admin" label="Admin" />
+    <div className="app-shell">
+      {/* HEADER – giữ nguyên layout */}
+      <header className="app-header">
+        <div className="app-header-inner">
+          <div className="app-logo">Sweet Heaven</div>
+          <nav className="app-nav">
+            <NavLink end to="/">
+              Home
+            </NavLink>
+            <NavLink to="/menu">Menu</NavLink>
+            <NavLink to="/feedback">Feedback</NavLink>
+            <NavLink to="/contact">Contact</NavLink>
+            <NavLink to="/admin">Admin</NavLink>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl p-4">
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Home />} />
-          <Route path="/menu" element={<Menu />} />
-          <Route path="/feedback" element={<Feedback />} />
-          <Route path="/contact" element={<Contact />} />
+      {/* ROUTES */}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/menu/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
 
-          {/* Admin (nested) */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="compose" element={<AdminCompose />} />
-            <Route path="calendar" element={<AdminCalendar />} />
-            <Route path="inbox" element={<AdminInbox />} />
-          </Route>
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/admin" element={<AdminPage />} />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-
-      <footer className="mt-16 border-t">
-        <div className="mx-auto max-w-6xl p-6 text-sm text-slate-500">
-          © {new Date().getFullYear()} Sweet Heaven Bakery.
-        </div>
-      </footer>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </div>
-  )
+  );
 }

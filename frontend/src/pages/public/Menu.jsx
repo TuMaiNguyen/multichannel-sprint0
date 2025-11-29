@@ -1,11 +1,11 @@
 // frontend/src/pages/public/Menu.jsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiGet } from "../../lib/api";
 import MenuCard from "../../components/MenuCard";
 import ErrorBanner from "../../components/ErrorBanner";
 import Loader from "../../components/Loader";
 
-// IMPORT 12 HÌNH TỪ assets
 import croissantImg from "../../assets/menu/croissant.jpg";
 import tiramisuImg from "../../assets/menu/tiramisu.jpg";
 import traSuaImg from "../../assets/menu/tra-sua-sweet-heaven.jpg";
@@ -19,14 +19,14 @@ import traDaoCamSaImg from "../../assets/menu/tra-dao-cam-sa.jpg";
 import caPheSuaImg from "../../assets/menu/ca-phe-sua-coldbrew.jpg";
 import matchaLatteImg from "../../assets/menu/matcha-latte.jpg";
 
-// 12 món demo cố định (hình từ assets)
-const DEMO_MENU_ITEMS = [
+// EXPORT để dùng chung cho ProductDetail
+export const DEMO_MENU_ITEMS = [
   {
     id: 1,
     name: "Croissant bơ",
     price: 32000,
     description:
-      "Bánh croissant bơ Pháp, lớp vỏ giòn, ruột bông, thơm mùi bơ.",
+      "Bánh croissant bơ Pháp, lớp vỏ giòn, ruột bông, thơm ngậy mùi bơ sữa.",
     image: croissantImg,
   },
   {
@@ -121,6 +121,7 @@ export default function Menu() {
   const [items, setItems] = useState(DEMO_MENU_ITEMS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +145,7 @@ export default function Menu() {
               name: serverItem.name || fallback.name,
               price: serverItem.price ?? fallback.price,
               description: serverItem.description || fallback.description,
-              // KHÔNG override image, giữ hình local
+              // KHÔNG override image
             };
           });
 
@@ -159,7 +160,6 @@ export default function Menu() {
     }
 
     fetchMenu();
-
     return () => {
       cancelled = true;
     };
@@ -167,11 +167,7 @@ export default function Menu() {
 
   return (
     <main className="page page-menu">
-      <section
-        style={{
-          padding: "32px 24px 8px",
-        }}
-      >
+      <section style={{ padding: "32px 24px 8px" }}>
         <h1
           style={{
             fontSize: "28px",
@@ -205,11 +201,7 @@ export default function Menu() {
         </div>
       )}
 
-      <section
-        style={{
-          padding: "0 24px 40px",
-        }}
-      >
+      <section style={{ padding: "0 24px 40px" }}>
         <div
           style={{
             display: "grid",
@@ -224,6 +216,7 @@ export default function Menu() {
               price={item.price}
               description={item.description}
               image={item.image}
+              onClick={() => navigate(`/menu/${item.id}`)}
             />
           ))}
         </div>
