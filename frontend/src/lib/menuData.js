@@ -1,5 +1,5 @@
 // frontend/src/lib/menuData.js
-// Nguồn dữ liệu menu demo (12 món) dùng chung cho Menu & Product Detail
+// Nguồn dữ liệu 12 món – giữ nguyên tên + hình + mô tả
 
 import croissantImg from "../assets/menu/croissant.jpg";
 import tiramisuImg from "../assets/menu/tiramisu.jpg";
@@ -14,13 +14,13 @@ import traDaoCamSaImg from "../assets/menu/tra-dao-cam-sa.jpg";
 import caPheSuaImg from "../assets/menu/ca-phe-sua-coldbrew.jpg";
 import matchaLatteImg from "../assets/menu/matcha-latte.jpg";
 
-export const DEMO_MENU_ITEMS = [
+export const MENU_ITEMS = [
   {
     id: 1,
     name: "Croissant bơ",
     price: 32000,
     description:
-      "Bánh croissant bơ Pháp, lớp vỏ giòn, ruột bông, thơm mùi bơ.",
+      "Bánh croissant bơ Pháp, lớp vỏ giòn, ruột bông, thơm ngậy mùi bơ sữa.",
     image: croissantImg,
   },
   {
@@ -111,8 +111,12 @@ export const DEMO_MENU_ITEMS = [
   },
 ];
 
-// Helper: tìm món theo id (dùng cho Product Detail)
-export function getMenuItemById(id) {
-  const numericId = Number(id);
-  return DEMO_MENU_ITEMS.find((item) => item.id === numericId) || null;
+export function getProductById(id) {
+  const numeric = typeof id === "string" ? parseInt(id, 10) : id;
+  return MENU_ITEMS.find((item) => item.id === numeric) || null;
+}
+
+export function formatPrice(value) {
+  if (typeof value !== "number") return value;
+  return value.toLocaleString("vi-VN") + " đ";
 }

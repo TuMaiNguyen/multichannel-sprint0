@@ -1,134 +1,206 @@
 // frontend/src/pages/admin/Inbox.jsx
 import React, { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import { apiGet } from "../../lib/api";
-import Loader from "../../components/Loader";
-import ErrorBanner from "../../components/ErrorBanner";
+
+function AdminHero({ active }) {
+  const tabStyle = (isActive) => ({
+    padding: "10px 24px",
+    borderRadius: "999px",
+    textDecoration: "none",
+    fontSize: "15px",
+    fontWeight: 600,
+    color: isActive ? "#b91c1c" : "#111827",
+    backgroundColor: isActive ? "#fecaca" : "#ffffff",
+    boxShadow: isActive ? "0 10px 25px rgba(248,113,113,0.35)" : "none",
+  });
+
+  return (
+    <section
+      style={{
+        background:
+          "linear-gradient(135deg,#ffe4e6 0%,#fdf2f8 30%,#eff6ff 65%,#ecfeff 100%)",
+        borderRadius: "40px",
+        padding: "24px 28px 22px",
+        boxShadow: "0 22px 60px rgba(15,23,42,0.18)",
+        marginBottom: "26px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+        <div
+          style={{
+            width: "64px",
+            height: "64px",
+            borderRadius: "999px",
+            background:
+              "radial-gradient(circle at 30% 20%,#f97373,#fb7185 45%,#f97316 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#ffffff",
+            fontWeight: 800,
+            fontSize: "22px",
+          }}
+        >
+          SH
+        </div>
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "26px",
+              fontWeight: 800,
+              color: "#111827",
+            }}
+          >
+            Sweet Heaven Bakery — Media Hub
+          </h1>
+          <p
+            style={{
+              margin: "4px 0 0",
+              fontSize: "14px",
+              color: "#4b5563",
+            }}
+          >
+            Cổng truyền thông đa kênh cho chuỗi tiệm bánh.
+          </p>
+        </div>
+      </div>
+
+      <nav
+        style={{
+          marginTop: "22px",
+          display: "flex",
+          gap: "16px",
+        }}
+      >
+        <NavLink to="/admin" style={() => tabStyle(active === "dashboard")}>
+          Dashboard
+        </NavLink>
+        <NavLink
+          to="/admin/compose"
+          style={() => tabStyle(active === "compose")}
+        >
+          Đăng bài
+        </NavLink>
+        <NavLink
+          to="/admin/calendar"
+          style={() => tabStyle(active === "calendar")}
+        >
+          Lịch xuất bản
+        </NavLink>
+        <NavLink to="/admin/inbox" style={() => tabStyle(active === "inbox")}>
+          Tin nhắn KH
+        </NavLink>
+      </nav>
+    </section>
+  );
+}
 
 export default function Inbox() {
-  const [items, setItems] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadEvents() {
+  const loadEvents = async () => {
     try {
       setLoading(true);
       setError("");
       const data = await apiGet("/admin/events");
-
-      if (!data || !data.ok) {
-        throw new Error("API /admin/events trả về không hợp lệ");
+      if (data && data.ok) {
+        setEvents(data.events || []);
+      } else {
+        setError("Không tải được events.");
       }
-
-      setItems(Array.isArray(data.items) ? data.items : []);
     } catch (err) {
       console.error(err);
-      setError(
-        "Không tải được danh sách event từ webhook. Hãy kiểm tra backend Render và bấm Refresh."
-      );
+      setError("Lỗi khi gọi /admin/events.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     loadEvents();
   }, []);
 
   return (
-    <div>
-      <h2
-        style={{
-          fontSize: "22px",
-          fontWeight: 700,
-          marginBottom: "8px",
-        }}
-      >
-        Inbox – Webhook events
-      </h2>
+    <main>
+      <AdminHero active="inbox" />
 
-      <button
-        type="button"
-        onClick={loadEvents}
-        style={{
-          padding: "8px 16px",
-          borderRadius: "999px",
-          border: "none",
-          backgroundColor: "#1d4ed8",
-          color: "#ffffff",
-          fontSize: "14px",
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        Refresh
-      </button>
-
-      {error && (
-        <div style={{ marginTop: "12px", maxWidth: "480px" }}>
-          <ErrorBanner>{error}</ErrorBanner>
-        </div>
-      )}
-
-      {loading && (
-        <div style={{ marginTop: "12px" }}>
-          <Loader />
-        </div>
-      )}
-
-      {!loading && !items.length && !error && (
-        <p style={{ marginTop: "16px" }}>Chưa có sự kiện nào được ghi nhận.</p>
-      )}
-
-      {items.length > 0 && (
-        <div
+      <section>
+        <h2
           style={{
-            marginTop: "18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            maxWidth: "640px",
+            fontSize: "20px",
+            fontWeight: 700,
+            margin: "0 0 10px",
           }}
         >
-          {items.map((evt) => (
-            <div
-              key={evt.createdAt + evt.id}
-              style={{
-                padding: "12px 14px",
-                borderRadius: "16px",
-                backgroundColor: "#ffffff",
-                boxShadow: "0 6px 18px rgba(148,163,184,0.35)",
-              }}
-            >
-              <div style={{ fontSize: "13px", color: "#6b7280" }}>
-                {evt.createdAt}
-              </div>
-              <div style={{ fontSize: "15px", fontWeight: 600 }}>
-                {evt.event} – {evt.channel || "webhook"}
-              </div>
-              {evt.message && (
-                <div
-                  style={{
-                    fontSize: "14px",
-                    marginTop: "4px",
-                    color: "#374151",
-                  }}
-                >
-                  {evt.message}
-                </div>
-              )}
+          Inbox – Webhook events
+        </h2>
+
+        <button
+          type="button"
+          onClick={loadEvents}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "999px",
+            border: "1px solid #e5e7eb",
+            backgroundColor: "#ffffff",
+            fontSize: "14px",
+            cursor: "pointer",
+            marginBottom: "12px",
+          }}
+        >
+          Refresh
+        </button>
+
+        {loading && (
+          <p style={{ fontSize: "14px", color: "#6b7280" }}>Đang tải...</p>
+        )}
+        {error && (
+          <p style={{ fontSize: "14px", color: "#b91c1c" }}>{error}</p>
+        )}
+
+        {!loading && !error && events.length === 0 && (
+          <p style={{ fontSize: "15px" }}>Chưa có sự kiện nào được ghi nhận.</p>
+        )}
+
+        {!loading && !error && events.length > 0 && (
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "28px",
+              boxShadow: "0 16px 38px rgba(15,23,42,0.14)",
+              padding: "18px 22px",
+              fontSize: "14px",
+            }}
+          >
+            {events.map((ev) => (
               <div
+                key={ev.id + (ev.timestamp || "")}
                 style={{
-                  fontSize: "12px",
-                  marginTop: "4px",
-                  color: "#9ca3af",
+                  padding: "10px 0",
+                  borderBottom: "1px solid #e5e7eb",
                 }}
               >
-                ID: {evt.id}
+                <div style={{ fontWeight: 600 }}>
+                  {ev.event || "event"} – {ev.id}
+                </div>
+                <div style={{ color: "#6b7280" }}>
+                  Message: {ev.message || "(no message)"}
+                </div>
+                <div style={{ color: "#6b7280" }}>
+                  Channel: {ev.channel || "N/A"}
+                </div>
+                <div style={{ color: "#9ca3af" }}>
+                  Time: {ev.timestamp || ev.received_at || "N/A"}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }

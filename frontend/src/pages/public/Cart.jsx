@@ -1,113 +1,95 @@
 // frontend/src/pages/public/Cart.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
-import { formatCurrency } from "../../lib/format";
+import { MENU_ITEMS, formatPrice, getProductById } from "../../lib/menuData";
 
-export default function CartPage() {
-  const {
-    items,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    totalItems,
-    totalAmount,
-  } = useCart();
+export default function Cart({ cart, updateQuantity, removeItem, clearCart }) {
   const navigate = useNavigate();
 
-  const handleCheckout = () => {
+  const items = cart
+    .map((entry) => {
+      const product = getProductById(entry.id);
+      if (!product) return null;
+      return { ...entry, product };
+    })
+    .filter(Boolean);
+
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.quantity * item.product.price,
+    0
+  );
+
+  const handleGoCheckout = () => {
     if (!items.length) return;
     navigate("/checkout");
   };
 
-  if (!items.length) {
-    return (
-      <main className="page page-cart">
-        <section style={{ padding: "40px 24px" }}>
-          <h1
-            style={{
-              fontSize: "28px",
-              fontWeight: 800,
-              marginBottom: "16px",
-            }}
-          >
-            Giỏ hàng của bạn
-          </h1>
-          <p style={{ marginBottom: "16px", color: "#4b5563" }}>
-            Hiện chưa có sản phẩm nào trong giỏ.
-          </p>
-          <Link to="/menu" style={{ color: "#2563eb", fontWeight: 500 }}>
-            ← Quay lại menu để chọn bánh
-          </Link>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main className="page page-cart">
-      <section style={{ padding: "32px 24px 24px" }}>
-        <h1
-          style={{
-            fontSize: "30px",
-            fontWeight: 800,
-          }}
-        >
-          Giỏ hàng của bạn
-        </h1>
-      </section>
-
-      <section
+    <main>
+      <h1
         style={{
-          padding: "0 24px 40px",
+          fontSize: "32px",
+          fontWeight: 800,
+          marginBottom: "24px",
+          color: "#111827",
         }}
       >
+        Giỏ hàng của bạn
+      </h1>
+
+      {!items.length && (
+        <div>
+          <p style={{ fontSize: "15px", color: "#4b5563", marginBottom: "12px" }}>
+            Giỏ hàng đang trống. Hãy chọn vài chiếc bánh ngon nhé!
+          </p>
+          <Link to="/menu" style={{ color: "#2563eb", fontWeight: 500 }}>
+            ← Quay lại menu
+          </Link>
+        </div>
+      )}
+
+      {items.length > 0 && (
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 2.1fr) minmax(260px, 0.9fr)",
-            gap: "24px",
+            gridTemplateColumns: "minmax(0,2fr) minmax(0,1.1fr)",
+            gap: "28px",
             alignItems: "flex-start",
           }}
         >
-          {/* Danh sách sản phẩm */}
+          {/* Bên trái: danh sách món */}
           <div
             style={{
-              background: "#ffffff",
+              backgroundColor: "#ffffff",
               borderRadius: "32px",
-              boxShadow:
-                "0 24px 80px rgba(15,23,42,0.12), 0 0 0 1px rgba(255,255,255,0.5)",
-              overflow: "hidden",
+              boxShadow: "0 18px 45px rgba(15,23,42,0.15)",
+              padding: "20px 24px",
             }}
           >
-            {items.map((item, index) => (
+            {items.map((item) => (
               <div
-                key={item.id}
+                key={item.product.id}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "auto minmax(0, 1fr) auto",
+                  gridTemplateColumns: "auto minmax(0,1fr) auto",
+                  columnGap: "20px",
                   alignItems: "center",
-                  padding: "20px 24px",
-                  borderBottom:
-                    index === items.length - 1
-                      ? "none"
-                      : "1px solid rgba(226,232,240,0.8)",
-                  columnGap: "16px",
+                  padding: "16px 0",
+                  borderBottom: "1px solid rgba(226,232,240,0.9)",
                 }}
               >
                 <div
                   style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "20px",
+                    width: "96px",
+                    height: "96px",
+                    borderRadius: "24px",
                     overflow: "hidden",
-                    boxShadow:
-                      "0 12px 30px rgba(15,23,42,0.18), 0 0 0 1px rgba(255,255,255,0.7)",
                   }}
                 >
                   <img
-                    src={item.image}
-                    alt={item.name}
+                    src={item.product.image}
+                    alt={item.product.name}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -118,33 +100,34 @@ export default function CartPage() {
                 </div>
 
                 <div>
-                  <div
+                  <p
                     style={{
+                      margin: "0 0 4px",
                       fontSize: "16px",
-                      fontWeight: 700,
-                      marginBottom: "4px",
+                      fontWeight: 600,
+                      color: "#111827",
                     }}
                   >
-                    {item.name}
-                  </div>
-                  <div
+                    {item.product.name}
+                  </p>
+                  <p
                     style={{
+                      margin: "0 0 4px",
                       fontSize: "14px",
-                      color: "#4b5563",
-                      marginBottom: "6px",
+                      color: "#6b7280",
                     }}
                   >
-                    {formatCurrency(item.price).replace("₫", "đ")}
-                  </div>
+                    {formatPrice(item.product.price)}
+                  </p>
                   <button
                     type="button"
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.product.id)}
                     style={{
                       padding: 0,
                       border: "none",
-                      background: "transparent",
-                      color: "#ef4444",
-                      fontSize: "13px",
+                      background: "none",
+                      color: "#dc2626",
+                      fontSize: "14px",
                       cursor: "pointer",
                     }}
                   >
@@ -152,169 +135,146 @@ export default function CartPage() {
                   </button>
                 </div>
 
-                {/* Số lượng + giá bên phải */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "12px",
-                    justifySelf: "flex-end",
+                    justifyContent: "flex-end",
+                    gap: "10px",
+                    fontSize: "15px",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      borderRadius: "999px",
-                      border: "1px solid rgba(148,163,184,0.5)",
-                      padding: "4px 10px",
-                      gap: "8px",
-                      background: "#f9fafb",
-                    }}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateQuantity(
+                        item.product.id,
+                        Math.max(1, item.quantity - 1)
+                      )
+                    }
+                    style={qtyButtonStyle}
                   >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateQuantity(item.id, item.quantity - 1)
-                      }
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        fontSize: "16px",
-                        width: 24,
-                        height: 24,
-                        cursor: "pointer",
-                      }}
-                    >
-                      –
-                    </button>
-                    <span
-                      style={{
-                        minWidth: 18,
-                        textAlign: "center",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {item.quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateQuantity(item.id, item.quantity + 1)
-                      }
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        fontSize: "16px",
-                        width: 24,
-                        height: 24,
-                        cursor: "pointer",
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  <div
+                    −
+                  </button>
+                  <span
                     style={{
-                      fontSize: "15px",
+                      minWidth: "24px",
+                      textAlign: "center",
                       fontWeight: 600,
                     }}
                   >
-                    {formatCurrency(item.price * item.quantity).replace(
-                      "₫",
-                      "đ"
-                    )}
-                  </div>
+                    {item.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateQuantity(item.product.id, item.quantity + 1)
+                    }
+                    style={qtyButtonStyle}
+                  >
+                    +
+                  </button>
+                  <span
+                    style={{
+                      width: "80px",
+                      textAlign: "right",
+                      fontWeight: 600,
+                      color: "#111827",
+                    }}
+                  >
+                    {formatPrice(item.product.price * item.quantity)}
+                  </span>
                 </div>
               </div>
             ))}
 
             <div
               style={{
-                padding: "14px 24px 18px",
-                borderTop: "1px solid rgba(226,232,240,0.9)",
+                marginTop: "16px",
                 fontSize: "14px",
                 color: "#6b7280",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
               <button
                 type="button"
                 onClick={clearCart}
                 style={{
-                  border: "none",
-                  background: "transparent",
                   padding: 0,
-                  cursor: "pointer",
+                  border: "none",
+                  background: "none",
                   color: "#ef4444",
+                  cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 Xóa hết giỏ hàng
               </button>
+              <Link to="/menu" style={{ color: "#2563eb" }}>
+                ← Chọn thêm sản phẩm
+              </Link>
             </div>
           </div>
 
-          {/* Tóm tắt đơn hàng */}
+          {/* Bên phải: tóm tắt đơn hàng */}
           <aside
             style={{
-              background: "#ffffff",
+              backgroundColor: "#ffffff",
               borderRadius: "32px",
-              padding: "24px 24px 28px",
-              boxShadow:
-                "0 24px 80px rgba(15,23,42,0.14), 0 0 0 1px rgba(255,255,255,0.5)",
+              boxShadow: "0 18px 45px rgba(15,23,42,0.15)",
+              padding: "24px 26px 26px",
             }}
           >
             <h2
               style={{
                 fontSize: "20px",
-                fontWeight: 800,
-                marginBottom: "12px",
+                fontWeight: 700,
+                margin: "0 0 14px",
+                color: "#111827",
               }}
             >
               Tóm tắt đơn hàng
             </h2>
             <p
               style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                marginBottom: "4px",
+                fontSize: "15px",
+                margin: "0 0 8px",
+                color: "#4b5563",
               }}
             >
-              Tổng số món:{" "}
-              <span style={{ fontWeight: 700, color: "#111827" }}>
-                {totalItems}
-              </span>
+              Tổng số món: <strong>{totalItems}</strong>
             </p>
             <p
               style={{
-                fontSize: "15px",
-                fontWeight: 700,
-                marginBottom: "24px",
+                fontSize: "16px",
+                margin: "4px 0 20px",
                 color: "#111827",
               }}
             >
               Tạm tính:{" "}
-              <span style={{ color: "#2563eb" }}>
-                {formatCurrency(totalAmount).replace("₫", "đ")}
+              <span style={{ fontWeight: 700, color: "#2563eb" }}>
+                {formatPrice(subtotal)}
               </span>
             </p>
 
             <button
               type="button"
-              onClick={handleCheckout}
+              onClick={handleGoCheckout}
+              disabled={!items.length}
               style={{
                 width: "100%",
-                padding: "14px 18px",
+                padding: "14px 24px",
                 borderRadius: "999px",
                 border: "none",
-                fontSize: "15px",
-                fontWeight: 700,
-                color: "#ffffff",
-                cursor: "pointer",
+                cursor: items.length ? "pointer" : "not-allowed",
+                opacity: items.length ? 1 : 0.6,
                 background:
-                  "linear-gradient(135deg, #2563eb, #4338ca 50%, #2563eb)",
-                boxShadow: "0 18px 40px rgba(37,99,235,0.4)",
+                  "linear-gradient(135deg,#2563eb 0%,#4f46e5 45%,#a855f7 100%)",
+                color: "#ffffff",
+                fontSize: "16px",
+                fontWeight: 700,
                 marginBottom: "10px",
               }}
             >
@@ -324,18 +284,28 @@ export default function CartPage() {
             <Link
               to="/menu"
               style={{
+                display: "inline-block",
+                marginTop: "6px",
                 fontSize: "14px",
                 color: "#2563eb",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
               }}
             >
               ← Chọn thêm sản phẩm
             </Link>
           </aside>
         </div>
-      </section>
+      )}
     </main>
   );
 }
+
+const qtyButtonStyle = {
+  width: "32px",
+  height: "32px",
+  borderRadius: "999px",
+  border: "1px solid #e5e7eb",
+  backgroundColor: "#ffffff",
+  cursor: "pointer",
+  fontSize: "18px",
+  lineHeight: 1,
+};
